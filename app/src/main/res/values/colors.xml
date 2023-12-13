@@ -3,4 +3,11 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="animation_loading_background">#94ba79</color>
+    <color name="alive_animation_loading_background">#4d8227</color>
+    <color name="PALETE_CHARCOAL">#2e4057</color>
+    <color name="PALETE_ZOMP">#66a182</color>
+    <color name="PALETE_TEA_GREEN">#caffb9</color>
+    <color name="PALETE_LIGHT_GREEN">#aef78e</color>
+    <color name="PALETE_YELLOW_GREEN">#c0d461</color>
+    66a182
 </resources>

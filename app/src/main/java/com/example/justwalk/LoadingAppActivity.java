@@ -34,7 +34,7 @@ public class LoadingAppActivity extends AppCompatActivity {
                     e.printStackTrace();
                 }
                 finally {
-                    Intent intent = new Intent(LoadingAppActivity.this, MainActivity.class);
+                    Intent intent = new Intent(LoadingAppActivity.this, WelcomeActivity.class);
                     startActivity(intent);
                     finish();
                 }
