@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "606871080350",
+    "project_id": "justwalk-81197",
+    "storage_bucket": "justwalk-81197.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:606871080350:android:5ccabf4db05642259a1a8f",
+        "android_client_info": {
+          "package_name": "com.example.justwalk"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZD_78FrE4KiH_SmygC1S443DHqCHCiPw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

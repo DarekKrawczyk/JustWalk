@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/PALETE_ZOMP"
+    android:background="@color/PALETE_MIDNIGHT_GREEN"
     tools:context=".WelcomeActivity">
 
     <ImageView
@@ -25,9 +25,10 @@
         android:layout_height="wrap_content"
         android:text="Just Walk"
         android:textAlignment="center"
-        android:textColor="@color/PALETE_YELLOW_GREEN"
+        android:textColor="@color/white"
         android:textSize="48sp"
         android:textStyle="bold"
+        app:autoSizeTextType="none"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

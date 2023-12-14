@@ -9,5 +9,10 @@
     <color name="PALETE_TEA_GREEN">#caffb9</color>
     <color name="PALETE_LIGHT_GREEN">#aef78e</color>
     <color name="PALETE_YELLOW_GREEN">#c0d461</color>
-    66a182
+    <color name="PALETE_WALLNUT_BROWN">#716657</color>
+    <color name="PALETE_SHAMROCK_GREEN">#009344</color>
+    <color name="PALETE_YELLO_GREEN">#ABD567</color>
+    <color name="PALETE_TEA_ROSE">#D5ACA9</color>
+    <color name="PALETE_MIDNIGHT_GREEN">#0B3948</color>
+
 </resources>
