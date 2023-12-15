@@ -1,0 +1,6 @@
+1) Potrzebna będzie modyfikacja albo nowa klasa -> jej zadanie to przechowywanie kolejnych punktów na mapie do odwiedzenia
+2) Potrzebna będzie metoda która ustawia tylko jedną trasę A -> B
+3) Jak sie dojdzie do następnego mijesca to uruchamiana jkest metoda która ładuje kolejną trasę
+4) Jak sie przejdzie całosc to trasa powrotna do domu
+
+ZAIMPLEMENTOWAĆ LEPSZE POBIERANIE POZYCJI -> ZAIMPLEMENTOWAĆ LEPSZE STWIERDZANIE CZY DOSZEDŁEM DO CELU -> GDY DOJDĘ DO CELU AKTUALIZACJA NASTĘPNEGO CELU

@@ -7,18 +7,26 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
+import android.app.Dialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.auth.FirebaseAuth;
 
 public class DashboardBaseActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
     private DrawerLayout _drawerLayout;
+    private final String TAG = "DashboardBaseActivity";
+    private static final int ERROR_DIALOG_REQUEST = 9001;
     @Override
     public void setContentView(View view){
         _drawerLayout = (DrawerLayout) getLayoutInflater().inflate(R.layout.activity_dashboard_base, null);
@@ -55,8 +63,10 @@ public class DashboardBaseActivity extends AppCompatActivity implements Navigati
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    startActivity(new Intent(DashboardBaseActivity.this, WalkActivity.class));
-                    overridePendingTransition(0, 0);
+                    if(isServicesOK()){
+                        startActivity(new Intent(DashboardBaseActivity.this, WalkActivity.class));
+                        overridePendingTransition(0, 0);
+                    }
                 }
             }, 300);
         } else if (itemID == R.id.nav_walks) {
@@ -73,12 +83,14 @@ public class DashboardBaseActivity extends AppCompatActivity implements Navigati
                     // TODO: IMPLEMENT
                 }
             }, 300);
-        } else if (itemID == R.id.nav_stats) {
+        } else if (itemID == R.id.nav_log_out) {
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    // TODO: IMPLEMENT LOGOUT!!!
-                    
+                    FirebaseAuth auth = FirebaseAuth.getInstance();
+                    auth.signOut();
+                    startActivity(new Intent(DashboardBaseActivity.this, LoginActivity.class));
+                    overridePendingTransition(0, 0);
                 }
             }, 300);
         }
@@ -97,5 +109,27 @@ public class DashboardBaseActivity extends AppCompatActivity implements Navigati
         if(getSupportActionBar() != null){
             getSupportActionBar().setTitle(title);
         }
+    }
+
+    public boolean isServicesOK(){
+        Log.d(TAG, "isServicesOK() -> Checking google services version");
+
+        int avaiable = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(DashboardBaseActivity.this);
+
+        if(avaiable == ConnectionResult.SUCCESS){
+            // Everything OK
+            //Log.d(TAG, "isServicesOK: Google Play services are working");
+            return true;
+        }
+        else if(GoogleApiAvailability.getInstance().isUserResolvableError(avaiable)){
+            // Fixable;
+            Log.d(TAG, "Google Play services fixable error!");
+            Dialog dialog = GoogleApiAvailability.getInstance().getErrorDialog(DashboardBaseActivity.this, avaiable, ERROR_DIALOG_REQUEST);
+            dialog.show();
+        }
+        else{
+            Toast.makeText(this, "Google Play services error!", Toast.LENGTH_SHORT).show();
+        }
+        return false;
     }
 }
