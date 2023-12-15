@@ -52,6 +52,7 @@ public class WelcomeActivity extends AppCompatActivity {
         startActivity(intent);
     }
     public void onButtonLoginClicked(View view){
-
+        Intent intent = new Intent(WelcomeActivity.this, LoginActivity.class);
+        startActivity(intent);
     }
 }

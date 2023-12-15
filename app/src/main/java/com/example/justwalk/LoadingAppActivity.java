@@ -6,12 +6,16 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.WindowManager;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.airbnb.lottie.LottieAnimationView;
 import com.airbnb.lottie.LottieDrawable;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class LoadingAppActivity extends AppCompatActivity {
 
+    private FirebaseAuth _auth;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -26,6 +30,8 @@ public class LoadingAppActivity extends AppCompatActivity {
         LottieAnimationView animation = findViewById(R.id.lottieAnimationView);
         animation.animate().translationY(-2000).setDuration(1000).setStartDelay(2500);
 
+        _auth = FirebaseAuth.getInstance();
+
         Thread thread = new Thread(){
             public void run(){
                 try{
@@ -34,9 +40,20 @@ public class LoadingAppActivity extends AppCompatActivity {
                     e.printStackTrace();
                 }
                 finally {
-                    Intent intent = new Intent(LoadingAppActivity.this, WelcomeActivity.class);
-                    startActivity(intent);
-                    finish();
+                    // If user is logged in
+                    FirebaseUser user = _auth.getCurrentUser();
+
+                    // Not logged in
+                    if(user == null){
+                        Intent intent = new Intent(LoadingAppActivity.this, WelcomeActivity.class);
+                        startActivity(intent);
+                        finish();
+                    } else {
+                        Intent intent = new Intent(LoadingAppActivity.this, DashboardActivity.class);
+                        startActivity(intent);
+                        finish();
+                    }
+
                 }
             }
 
