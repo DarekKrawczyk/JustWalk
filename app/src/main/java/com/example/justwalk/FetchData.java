@@ -46,7 +46,7 @@ public class FetchData extends AsyncTask<Object,String,String> {
                 JSONObject getName = jsonArray.getJSONObject(i);
                 String name = getName.getString("name");
 
-                MapPoint mp = new MapPoint(name, lat, lng);
+                MapPoint mp = new MapPoint(name, lat, lng, null);
                 mapPoints.AddMapPoint(mp);
 
                 /*LatLng latLng = new LatLng(Double.parseDouble(lat), Double.parseDouble(lng));

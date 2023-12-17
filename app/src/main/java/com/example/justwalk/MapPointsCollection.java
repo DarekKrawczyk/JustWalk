@@ -48,9 +48,6 @@ public class MapPointsCollection {
         }
         SetReady(false);
     }
-    public List<DirectionsResult> GetDirResults(){
-        return _directionResults;
-    }
     public void NormalizedResults(){
         DirectionsResult roadHome = _directionResults.get(_directionResults.size() - 1);
         List<DirectionsResult> road = new ArrayList<>();
@@ -68,7 +65,7 @@ public class MapPointsCollection {
     }
     public MapPointsCollection(GoogleMap googleMap){
         _googleMap = googleMap;
-        _startingMapPoint = new MapPoint("DEFAULT", "0","0");
+        _startingMapPoint = new MapPoint("DEFAULT", "0","0", null);
         _mapPoints = new ArrayList<>();
         _directionResults = new ArrayList<>();
         _markers = new ArrayList<>();
@@ -97,10 +94,6 @@ public class MapPointsCollection {
             return true;
         }
         else return false;
-    }
-
-    public MapPoint GetReturnStartingMapPoint(){
-        return _startingMapPoint;
     }
 
     public MapPoint GetStartingMapPoint(){
@@ -144,32 +137,19 @@ public class MapPointsCollection {
         return _markers;
     }
 
-    public void RemoveMarkerAt(int index){
-        int counter = 0;
-        for(Marker mark : _markers){
-            if(counter == index){
-                mark.remove();
-                break;
-            }
-            counter++;
-        }
-        _markers.remove(index);
+    public Marker GetDestinationMarker(){
+        return _markers.get(1);
     }
-
-    public Marker GetMarkerFromIndex(int index){
-        return _markers.get(index);
-    }
-
-    public int HasArrivedAtMarker(LatLng userPosition, double distanceCap){
+    public boolean HasArrived(LatLng userPosition, double distanceCap){
         // If user has arrived at marker return index of that marker, otherwise return -1
-        for(int i = 0; i<_markers.size() - 1; i++){
-            LatLng markerPos = _markers.get(i).getPosition();
-            double distance = MapPointsCollection.CalculateDistance(userPosition, markerPos);
-            if(distance < distanceCap){
-                return i;
-            }
+        MapPoint mp = GetNextMapPoint();
+        if(mp == null) return false;
+        LatLng markerPos = mp.GetLatLng();
+        double distance = MapPointsCollection.CalculateDistance(userPosition, markerPos);
+        if(distance < distanceCap){
+            return true;
         }
-        return -1;
+        return false;
     }
 
     public void SetMapMarkers(){
@@ -177,24 +157,46 @@ public class MapPointsCollection {
         MarkerOptions startingMapPointmarkerOptions = new MarkerOptions();
         startingMapPointmarkerOptions.title(_startingMapPoint.GetName());
         startingMapPointmarkerOptions.position(_startingMapPoint.GetLatLng());
-        startingMapPointmarkerOptions.snippet(String.valueOf(0));
+        startingMapPointmarkerOptions.snippet("Starting location");
         Marker startMarker = _googleMap.addMarker(startingMapPointmarkerOptions);
         _markers.add(startMarker);
         _googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(_startingMapPoint.GetLatLng(), 15));
 
-        for(int i = 0; i < _mapPoints.size(); i++){
-            MarkerOptions markerOptions = new MarkerOptions();
-            markerOptions.title(_mapPoints.get(i).GetName());
-            markerOptions.position(_mapPoints.get(i).GetLatLng());
-            markerOptions.snippet(String.valueOf(i+1));
-            Marker newMarker = _googleMap.addMarker(markerOptions);
-            _markers.add(newMarker);
-            _googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(_mapPoints.get(i).GetLatLng(), 15));
-        }
+
+        MapPoint nextMapPoint = GetNextMapPoint();
+        MarkerOptions markerOptions = new MarkerOptions();
+        markerOptions.title(nextMapPoint.GetName());
+        markerOptions.position(nextMapPoint.GetLatLng());
+        markerOptions.snippet("Destination");
+        Marker newMarker = _googleMap.addMarker(markerOptions);
+        _markers.add(newMarker);
+        _googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(nextMapPoint.GetLatLng(), 15));
     }
 
-    public int CalculatePoints(int index){
-        double distance = MapPointsCollection.CalculateDistance(_startingMapPoint.GetLatLng(), _markers.get(index).getPosition());
+
+    public void SetMapNextMarkers(){
+        MapPoint current = GetStartingMapPoint();
+        MarkerOptions startingMapPointmarkerOptions = new MarkerOptions();
+        startingMapPointmarkerOptions.title(current.GetName());
+        startingMapPointmarkerOptions.position(current.GetLatLng());
+        startingMapPointmarkerOptions.snippet("Current location");
+        Marker startMarker = _googleMap.addMarker(startingMapPointmarkerOptions);
+        _markers.add(startMarker);
+        _googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(current.GetLatLng(), 15));
+
+
+        MapPoint nextMapPoint = GetNextMapPoint();
+        MarkerOptions markerOptions = new MarkerOptions();
+        markerOptions.title(nextMapPoint.GetName());
+        markerOptions.position(nextMapPoint.GetLatLng());
+        markerOptions.snippet("Destination");
+        Marker newMarker = _googleMap.addMarker(markerOptions);
+        _markers.add(newMarker);
+        _googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(nextMapPoint.GetLatLng(), 15));
+    }
+
+    public int CalculatePoints(LatLng one, LatLng second){
+        double distance = MapPointsCollection.CalculateDistance(one, second);
         int points = (int)(distance * 1000);
         return points;
     }
@@ -247,15 +249,11 @@ public class MapPointsCollection {
     }
 
     private static double CalculateDistance(MapPoint point1, MapPoint point2) {
-        // Use your preferred formula to calculate the distance between two points
-        // For simplicity, let's assume a simple Euclidean distance here
         double latDiff = point1.GetLatLng().latitude - point2.GetLatLng().latitude;
         double lngDiff = point1.GetLatLng().longitude- point2.GetLatLng().longitude;
         return Math.sqrt(latDiff * latDiff + lngDiff * lngDiff);
     }
     private static double CalculateDistance(LatLng point1, LatLng point2) {
-        // Use your preferred formula to calculate the distance between two points
-        // For simplicity, let's assume a simple Euclidean distance here
         double latDiff = point1.latitude - point2.latitude;
         double lngDiff = point1.longitude- point2.longitude;
         return Math.sqrt(latDiff * latDiff + lngDiff * lngDiff);
@@ -269,15 +267,18 @@ public class MapPointsCollection {
         }
     }
 
-    public void ClearData() {
-        // Remove markers
-        for(Marker marker : _markers){
-            marker.remove();
+    public void DeleteMarkers(){
+        for(Marker mark : _markers){
+            mark.remove();
         }
+        _markers.clear();
+    }
+    public void ClearData() {
+        DeleteMarkers();
 
         _isReady = false;
         _isDataFetched = false;
-        _startingMapPoint = new MapPoint("DEFAULT", "0","0");
+        _startingMapPoint = new MapPoint("DEFAULT", "0","0", null);
         _mapPoints = new ArrayList<>();
         _directionResults = new ArrayList<>();
 

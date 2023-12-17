@@ -7,6 +7,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.app.ActivityManager;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
@@ -71,18 +73,22 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
     private Button startButton;
     private Button stopButton;
     private Button pauseButton;
+    private TextView PointsTV;
     private TextView timerTextView;
     private TextView distanceTextView;
     private boolean _isNavigating = false;
     private int USER_POINTS = 0;
 
+    private boolean isTrackingWalking = false;
     //HEADER
     private Switch AssistantSwitch;
     private Button NavigateButton;
     private boolean firstRun;
     private Button CancelButton;
     //POLULINE
+    private Polyline SINGLE_ASSISTANT_POLYLINE;
     private List<Polyline> ASSISTANT_POLYLINES;
+    private List<Polyline> WALK_POLYLINES;
     private Location previousLocation;
     private List<LatLng> polylinePoints;
     private Polyline polyline;
@@ -134,6 +140,7 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         //InitMap();
         polylinePoints = new ArrayList<>();
         ASSISTANT_POLYLINES = new ArrayList<>();
+        WALK_POLYLINES = new ArrayList<>();
         PrevSeconds = 0;
         locationReceiver = new LocationBroadcastReceiver(this);
         _totalDistance = 0;
@@ -156,6 +163,7 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         pauseButton = _activityBinding.getRoot().findViewById(R.id.BtnPause);
         timerTextView = _activityBinding.getRoot().findViewById(R.id.TvTime);
         distanceTextView = _activityBinding.getRoot().findViewById(R.id.TvDistance);
+        PointsTV = _activityBinding.getRoot().findViewById(R.id.WalkingActPointsTV);
 
         if(startButton == null){
             Toast.makeText(this, "BUTTON NULL", Toast.LENGTH_SHORT).show();
@@ -164,10 +172,6 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         AssistantSwitch = _activityBinding.getRoot().findViewById(R.id.SwthEnabled);
         CancelButton = _activityBinding.getRoot().findViewById(R.id.BtnCancel);
         NavigateButton = _activityBinding.getRoot().findViewById(R.id.BtnNavigate);
-
-        if(startButton == null ||stopButton == null ||pauseButton == null ||NavigateButton == null ||CancelButton == null ||AssistantSwitch == null){
-            Toast.makeText(this, "ARE NULL", Toast.LENGTH_SHORT).show();
-        }
 
         // Set initial state
         UpdateAssistanUI();
@@ -178,7 +182,6 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 // Update button state when the switch state changes
                 NavigateButton.setEnabled(isChecked);
-                CancelButton.setEnabled(isChecked);
                 if(isChecked == true){
 
                 } else{
@@ -205,7 +208,7 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
 
 
                     // Add starting point
-                    MapPoint startingMP = new MapPoint("STARTING", lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude());
+                    MapPoint startingMP = new MapPoint("STARTING", lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude(), null);
                     _mapPoints.SetStartingPoint(startingMP);
 
                     Object dataFetch[] = new Object[2];
@@ -233,7 +236,19 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         CancelButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO: IMPLEMENT CANCEL
+                // TODO: Save data in database and quit activity to main screen
+                Intent intent = new Intent(WalkActivity.this, HomeActivity.class);
+                startActivity(intent);
+                try{
+                    unregisterReceiver(locationReceiver);
+                } catch (Exception ex){
+
+                }
+                try{
+                    StopLocationService();
+                } catch (Exception ex){
+
+                }
             }
         });
 
@@ -242,20 +257,21 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startLocationService();
-                registerReceiver(locationReceiver, new IntentFilter(LocationService.ACTION_LOCATION_UPDATE));
                 if (isTimerRunning) {
                     resumeTimer();
                 } else {
                     startTimer();
                 }
+                startLocationService();
+                registerReceiver(locationReceiver, new IntentFilter(LocationService.ACTION_LOCATION_UPDATE));
+                isTrackingWalking = true;
             }
         });
 
         stopButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                stopTimer();
+                showStopTimerDialog();
             }
         });
 
@@ -271,7 +287,8 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         }
 
         //startLocationService();
-
+        startLocationService();
+        registerReceiver(locationReceiver, new IntentFilter(LocationService.ACTION_LOCATION_UPDATE));
     }
 
     private void resumeTimer() {
@@ -282,14 +299,17 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         // Enable or disable buttons based on the switch state
         boolean switchState = AssistantSwitch.isChecked();
         NavigateButton.setEnabled(switchState);
-        CancelButton.setEnabled(switchState);
     }
     public void ClearAssistantWalkData(){
         // Clear Data
         _mapPoints.ClearData();
+        ClearAssistantPolylines();
+    }
+    public void ClearAssistantPolylines(){
         for(Polyline poli : ASSISTANT_POLYLINES){
             poli.remove();
         }
+        ASSISTANT_POLYLINES.clear();
     }
     private void calculateTotalDistance() {
         if (polylinePoints.size() >= 2) {
@@ -317,8 +337,11 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
     private void UpdateTotalDistanceUI(){
         calculateTotalDistance();
         DecimalFormat df = new DecimalFormat("#.##");
-        String distanceText = df.format(_totalDistance) + " meters";
+        String distanceText = df.format(_totalDistance) + "[m]";
         distanceTextView.setText(distanceText);
+
+        String pointsString = String.format("Points: %01d", USER_POINTS);
+        PointsTV.setText(pointsString);
 
     }
     private void startTimer() {
@@ -332,6 +355,7 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
                 startTimeInMillis = System.currentTimeMillis();
             }
 
+            // TIMER - this is responsible for counting time of current walk.
             runnable = new Runnable() {
                 @Override
                 public void run() {
@@ -344,6 +368,7 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
                         int milliseconds = (int) (elapsedTimeInMillis % 1000);
 
                         int secs = ((minutes * 60) + seconds);
+                        /*
                         if(secs > PrevSeconds){
                             CurrentTimerSecs+=1;
                             PrevSeconds = secs;
@@ -400,6 +425,7 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
 
                             CurrentTimerSecs = 0;
                         }
+                        */
 
                         String timeString = String.format("%02d:%02d:%03d", minutes, seconds, milliseconds);
                         timerTextView.setText(timeString);
@@ -523,8 +549,33 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         });
     }
 
+    private void showStopTimerDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Stop Timer");
+        builder.setMessage("Do you want to stop the timer?");
+
+        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                stopTimer();
+                dialog.dismiss();
+            }
+        });
+
+        builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+
+        // Create and show the dialog
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
     private void stopTimer() {
-        // if isTimerRunning is running then handle if user want to cancel if for sure
+        isTrackingWalking = false;
         unregisterReceiver(locationReceiver);
         handler.removeCallbacks(runnable);
         timerTextView.setText("00:00:000");
@@ -536,13 +587,14 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         PrevSeconds = 0;
         CurrentTimerSecs = 0;
         _totalDistance = 0;
-        distanceTextView.setText("Distance");
+        distanceTextView.setText("0[m]");
         clearPolyline();
         StopLocationService();
     }
 
     private void pauseTimer() {
         if (isTimerRunning && !isTimerPaused) {
+            isTrackingWalking = true;
             handler.removeCallbacks(runnable);
             pausedTimeInMillis = System.currentTimeMillis() - startTimeInMillis;
             startButton.setEnabled(true);
@@ -552,6 +604,23 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
             isTimerPaused = true;
             unregisterReceiver(locationReceiver);
         }
+    }
+
+    private void ClearWalkPolylines(){
+        for(Polyline poli : WALK_POLYLINES){
+            poli.remove();
+        }
+        WALK_POLYLINES.clear();
+    }
+    private void DrawPolylineTo(LatLng location) {
+        PolylineOptions polylineOptions = new PolylineOptions()
+                .add(location)
+                .color(Color.RED)
+                .width(10);
+        polylineOptions.add(location);
+
+        Polyline polyline = _googleMap.addPolyline(polylineOptions);
+        WALK_POLYLINES.add(polyline);
     }
 
     private void drawPolyline() {
@@ -853,9 +922,13 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
             */
 
                 // TODO: TTUAJ
-                LatLng one = _mapPoints.GetMapPoints().get(0).GetLatLng();
-                LatLng twa = _mapPoints.GetMapPoints().get(3).GetLatLng();
-                getWalkingDirections(_geoApiContext,one, twa, Color.RED);
+                //LatLng one = _mapPoints.GetMapPoints().get(0).GetLatLng();
+                //LatLng twa = _mapPoints.GetMapPoints().get(3).GetLatLng();
+                //Toast.makeText(this, "FIRST SETTING", Toast.LENGTH_SHORT).show();
+                //LatLng firstMP = _mapPoints.GetStartingMapPoint().GetLatLng();
+                //LatLng secondMP = _mapPoints.GetDestinationMarker().getPosition();
+
+                //getWalkingDirections(_geoApiContext, firstMP, secondMP, Color.RED);
 
                 /*
                 _mapPoints.NormalizedResults();
@@ -879,23 +952,101 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         }
     }
 
+    // This gets triggered whenever data is fetched.
     @Override
     public void onDatFetchedResultChanged(boolean isDataFetched) {
         if(isDataFetched == true){
-            Toast.makeText(this, "DATA FETCHED", Toast.LENGTH_SHORT).show();
-            boolean areok = _mapPoints.AreDirResultsOK();
             _mapPoints.CalculateBestPath();
             _mapPoints.LimitPlacesTo(3);
-            _mapPoints.SetMapMarkers();
             MapPoint mp = _mapPoints.GetFirstMapPoint();
             if(mp != null){
                 calculateDirections(_mapPoints.GetMapPoints());
             }
+
+            _mapPoints.ClearMapPointIterator();
+            _mapPoints.DeleteMarkers();
+            _mapPoints.SetMapMarkers();
+            LatLng firstMP = _mapPoints.GetStartingMapPoint().GetLatLng();
+            LatLng secondMP = _mapPoints.GetDestinationMarker().getPosition();
+
+            getWalkingDirections(_geoApiContext, firstMP, secondMP, Color.RED);
         }
     }
 
+    // This updates whenever location is updated from background service.
     @Override
     public void onLocationUpdate(double latitude, double longitude) {
-        Toast.makeText(this, "UPDATED", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, "Location updated!", Toast.LENGTH_SHORT).show();
+
+        // Get location and update it
+        LatLng currentLatLng = new LatLng(latitude, longitude);
+        lastKnownLocation.setLatitude(currentLatLng.latitude);
+        lastKnownLocation.setLongitude(currentLatLng.longitude);
+
+        // Draw polylines if user is tracking walking!
+        if(isTrackingWalking == true){
+            polylinePoints.add(currentLatLng);
+            drawPolyline();
+        }
+
+        // Is navigation assistan turned on
+        if(_isNavigating == true){
+            // If result is != -1 then user has hit something!
+            boolean index = _mapPoints.HasArrived(currentLatLng, DISTANCE_FROM_MARKER_CAP);
+            if(index == true) {
+                    // USER HAS ARRIVED!
+                    Marker hitMarker = _mapPoints.GetDestinationMarker();
+                    String arrivedPlaceName = hitMarker.getTitle();
+                    LatLng markerLatLng = hitMarker.getPosition();
+
+
+                    int points = _mapPoints.CalculatePoints(currentLatLng, hitMarker.getPosition());
+
+                    _mapPoints.DeleteMarkers();
+
+                    ClearAssistantPolylines();
+                    if(arrivedPlaceName.contains("STARTING")){
+                        // TODO: HANDLE ENERING STARTING POSITION
+                        points += 100;
+                        Toast.makeText(WalkActivity.this, "YOU HAVE FINISHED! Points: " + points, Toast.LENGTH_SHORT).show();
+                        _isNavigating = false;
+                        //_mapPoints.RemoveMarkerAt(index);
+                    } else {
+                        Toast.makeText(WalkActivity.this, "YOU HAVE ARRIVED: " + arrivedPlaceName + ", points: "+points, Toast.LENGTH_SHORT).show();
+                        _mapPoints.IncrementMapPointIterator();
+
+                        _mapPoints.SetMapNextMarkers();
+
+                        // Update next place to go to
+                        boolean lastMPPassed = _mapPoints.LastMapPointPassed();
+
+                        MapPoint firstMP = _mapPoints.GetStartingMapPoint();
+                        LatLng secondMP;
+                        if(lastMPPassed){
+                            secondMP = _mapPoints.GetStartingMapPoint().GetLatLng();
+                        } else{
+                            secondMP = _mapPoints.GetDestinationMarker().getPosition();
+                        }
+
+
+                        getWalkingDirections(_geoApiContext, firstMP.GetLatLng(), secondMP, Color.RED);
+                    }
+                    USER_POINTS += points;
+
+                }
+
+
+            /*int markercCount = _mapPoints.GerMarker().size() - 1;
+            if(markercCount == 0){
+                // ALL OF THE POINTS HAVE BEEN HIT
+                // TODO: IMPLEMENT LOGIC FOR THAT
+                Toast.makeText(WalkActivity.this, "YOU HAVE FINISHED YOUR WALK!", Toast.LENGTH_SHORT).show();
+                FinishAssistantWalk();
+            }*/
+        }
+
+        UpdateTotalDistanceUI();
+
+        CurrentTimerSecs = 0;
     }
 }
