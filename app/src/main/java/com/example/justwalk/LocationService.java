@@ -26,6 +26,7 @@ import com.google.android.gms.location.LocationServices;
 public class LocationService extends Service {
 
     private static final String TAG = "LocationService";
+    public static final String ACTION_LOCATION_UPDATE = "com.example.justwalk.action.LOCATION_UPDATE";
 
     private FusedLocationProviderClient mFusedLocationClient;
     private final static long UPDATE_INTERVAL = 4 * 1000;  /* 4 secs */
@@ -40,6 +41,7 @@ public class LocationService extends Service {
     public void onCreate() {
         super.onCreate();
 
+        Log.d(TAG, "onCreate: ");
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         if (Build.VERSION.SDK_INT >= 26) {
@@ -86,18 +88,14 @@ public class LocationService extends Service {
         mFusedLocationClient.requestLocationUpdates(mLocationRequestHighAccuracy, new LocationCallback() {
                     @Override
                     public void onLocationResult(LocationResult locationResult) {
-
                         Log.d(TAG, "onLocationResult: got location result.");
                         Location location = locationResult.getLastLocation();
 
                         if (location != null) {
-                            // DATA GOOD
-                            /*
-                            User user = ((UserClient)(getApplicationContext())).getUser();
-                            GeoPoint geoPoint = new GeoPoint(location.getLatitude(), location.getLongitude());
-                            UserLocation userLocation = new UserLocation(user, geoPoint, null);
-                            saveUserLocation(userLocation);
-                            */
+                            Intent intent = new Intent(ACTION_LOCATION_UPDATE);
+                            intent.putExtra("latitude", location.getLatitude());
+                            intent.putExtra("longitude", location.getLongitude());
+                            sendBroadcast(intent);
                         }
                     }
                 },

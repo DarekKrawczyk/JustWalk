@@ -6,6 +6,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import android.app.ActivityManager;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
@@ -59,9 +62,11 @@ import java.util.concurrent.Executor;
 public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCallback,
         GoogleMap.OnPolylineClickListener,
         DirectionsResultListener,
-        DataFetchedResultListener{
+        DataFetchedResultListener,LocationUpdateListener {
 
+    private LocationBroadcastReceiver locationReceiver;
     // TIME COUNTING
+    Intent locationServiceIntent;
     private float CurrentZoom = -1;
     private Button startButton;
     private Button stopButton;
@@ -130,6 +135,7 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         polylinePoints = new ArrayList<>();
         ASSISTANT_POLYLINES = new ArrayList<>();
         PrevSeconds = 0;
+        locationReceiver = new LocationBroadcastReceiver(this);
         _totalDistance = 0;
         CurrentTimerSecs = 0;
         // Construct a PlacesClient
@@ -236,6 +242,8 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                startLocationService();
+                registerReceiver(locationReceiver, new IntentFilter(LocationService.ACTION_LOCATION_UPDATE));
                 if (isTimerRunning) {
                     resumeTimer();
                 } else {
@@ -261,6 +269,8 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         if(_geoApiContext == null){
             _geoApiContext = new GeoApiContext.Builder().apiKey(getString(R.string.GOOGLE_MAPS_API_KEY)).build();
         }
+
+        //startLocationService();
 
     }
 
@@ -515,7 +525,7 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
 
     private void stopTimer() {
         // if isTimerRunning is running then handle if user want to cancel if for sure
-
+        unregisterReceiver(locationReceiver);
         handler.removeCallbacks(runnable);
         timerTextView.setText("00:00:000");
         startButton.setEnabled(true);
@@ -528,6 +538,7 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         _totalDistance = 0;
         distanceTextView.setText("Distance");
         clearPolyline();
+        StopLocationService();
     }
 
     private void pauseTimer() {
@@ -539,6 +550,7 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
             pauseButton.setEnabled(false);
             isTimerRunning = false;
             isTimerPaused = true;
+            unregisterReceiver(locationReceiver);
         }
     }
 
@@ -762,6 +774,38 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         }
     }
 
+    private void startLocationService(){
+        if(!isLocationServiceRunning()){
+            locationServiceIntent = new Intent(this, LocationService.class);
+//        this.startService(serviceIntent);
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O){
+
+                WalkActivity.this.startForegroundService(locationServiceIntent);
+            }else{
+                startService(locationServiceIntent);
+            }
+        }
+    }
+
+    private void StopLocationService(){
+        if(locationServiceIntent != null){
+            stopService(locationServiceIntent);
+        }
+    }
+
+    private boolean isLocationServiceRunning() {
+        ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)){
+            if("com.codingwithmitch.googledirectionstest.services.LocationService".equals(service.service.getClassName())) {
+                Log.d(TAG, "isLocationServiceRunning: location service is already running.");
+                return true;
+            }
+        }
+        Log.d(TAG, "isLocationServiceRunning: location service is not running.");
+        return false;
+    }
+
     public void getWalkingDirections(GeoApiContext geo, LatLng origin, LatLng destination, int color) {
         new Handler(Looper.getMainLooper()).post(() -> {
         GeoApiContext geoApiContext = geo;
@@ -848,5 +892,10 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
                 calculateDirections(_mapPoints.GetMapPoints());
             }
         }
+    }
+
+    @Override
+    public void onLocationUpdate(double latitude, double longitude) {
+        Toast.makeText(this, "UPDATED", Toast.LENGTH_SHORT).show();
     }
 }
