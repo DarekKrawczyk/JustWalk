@@ -5,10 +5,13 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.database.ServerValue;
 import com.google.maps.model.DirectionsResult;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MapPointsCollection {
     private GoogleMap _googleMap;
@@ -138,7 +141,10 @@ public class MapPointsCollection {
     }
 
     public Marker GetDestinationMarker(){
-        return _markers.get(1);
+        if(_markers != null && _markers.size() >= 2){
+            return _markers.get(1);
+        }
+        return null;
     }
     public boolean HasArrived(LatLng userPosition, double distanceCap){
         // If user has arrived at marker return index of that marker, otherwise return -1
@@ -173,6 +179,19 @@ public class MapPointsCollection {
         _googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(nextMapPoint.GetLatLng(), 15));
     }
 
+    public List<Place> exportVisitedPlaces(){
+        List<Place> places = new ArrayList<>();
+        for(int i = 1; i<_mapPoints.size()-1; i++){
+            MapPoint currMP = _mapPoints.get(i);
+            String description = "";
+            Map map = new HashMap();
+            map.put("timestamp", ServerValue.TIMESTAMP);
+            Place place = new Place(currMP.GetName(), currMP.GetLatLng().latitude, currMP.GetLatLng().longitude, description, map);
+
+            places.add(place);
+        }
+        return places;
+    }
 
     public void SetMapNextMarkers(){
         MapPoint current = GetStartingMapPoint();

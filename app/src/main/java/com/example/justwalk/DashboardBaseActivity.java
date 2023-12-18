@@ -25,6 +25,7 @@ import com.google.firebase.auth.FirebaseAuth;
 public class DashboardBaseActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
     private DrawerLayout _drawerLayout;
+    private int DELAY_MS = 100;
     private final String TAG = "DashboardBaseActivity";
     private static final int ERROR_DIALOG_REQUEST = 9001;
     @Override
@@ -58,7 +59,7 @@ public class DashboardBaseActivity extends AppCompatActivity implements Navigati
                     startActivity(new Intent(DashboardBaseActivity.this, HomeActivity.class));
                     overridePendingTransition(0, 0);
                 }
-            }, 300);
+            }, DELAY_MS);
         } else if (itemID == R.id.nav_walk) {
             new Handler().postDelayed(new Runnable() {
                 @Override
@@ -68,21 +69,22 @@ public class DashboardBaseActivity extends AppCompatActivity implements Navigati
                         overridePendingTransition(0, 0);
                     }
                 }
-            }, 300);
+            }, DELAY_MS);
         } else if (itemID == R.id.nav_walks) {
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    // TODO: IMPLEMENT
+                    startActivity(new Intent(DashboardBaseActivity.this, WalksActivity.class));
+                    overridePendingTransition(0, 0);
                 }
-            }, 300);
+            }, DELAY_MS);
         } else if (itemID == R.id.nav_stats) {
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     // TODO: IMPLEMENT
                 }
-            }, 300);
+            }, DELAY_MS);
         } else if (itemID == R.id.nav_log_out) {
             new Handler().postDelayed(new Runnable() {
                 @Override
@@ -92,7 +94,7 @@ public class DashboardBaseActivity extends AppCompatActivity implements Navigati
                     startActivity(new Intent(DashboardBaseActivity.this, LoginActivity.class));
                     overridePendingTransition(0, 0);
                 }
-            }, 300);
+            }, DELAY_MS);
         }
 
         new Handler().postDelayed(new Runnable() {

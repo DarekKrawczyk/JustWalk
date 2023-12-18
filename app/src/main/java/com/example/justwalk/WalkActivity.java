@@ -46,6 +46,10 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.net.PlacesClient;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ServerValue;
 import com.google.maps.DirectionsApi;
 import com.google.maps.DirectionsApiRequest;
 import com.google.maps.GeoApiContext;
@@ -58,7 +62,9 @@ import com.google.maps.model.TravelMode;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 
 public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCallback,
@@ -236,19 +242,7 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         CancelButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO: Save data in database and quit activity to main screen
-                Intent intent = new Intent(WalkActivity.this, HomeActivity.class);
-                startActivity(intent);
-                try{
-                    unregisterReceiver(locationReceiver);
-                } catch (Exception ex){
-
-                }
-                try{
-                    StopLocationService();
-                } catch (Exception ex){
-
-                }
+                showQuitDialog();
             }
         });
 
@@ -289,6 +283,75 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         //startLocationService();
         startLocationService();
         registerReceiver(locationReceiver, new IntentFilter(LocationService.ACTION_LOCATION_UPDATE));
+    }
+
+    public void endWalk(){
+        // TODO: Save data in database and quit activity to main screen
+
+        Map map = new HashMap();
+        map.put("timestamp", ServerValue.TIMESTAMP);
+
+        double strideLength = 0.7;
+        double weight = 80;
+        double METvalue = 4.5; // Moderate walk
+        double minutes = Utility.ConvertToTotalMinutes(timerTextView.getText().toString());
+
+        double distanceKM = _totalDistance/1000;
+        int steps = Utility.CalculateSteps(_totalDistance, strideLength);
+        double calories = Utility.CalculateCaloriesBurned(weight, distanceKM, METvalue);
+
+        List<Place> places = _mapPoints.exportVisitedPlaces();
+
+        Walk walkToSave = new Walk(map, _totalDistance, steps, USER_POINTS, calories, places);
+
+        try{
+            FirebaseDatabase database = FirebaseDatabase.getInstance();
+            DatabaseReference walksRef = database.getReference("walks");
+
+            String walkId = walksRef.push().getKey();
+            walksRef.child(walkId).setValue(walkToSave).addOnCompleteListener(new OnCompleteListener<Void>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Void> task) {
+                            if (task.isSuccessful()) {
+                                Log.d(TAG, "DATA ADDED TO DB");
+                            } else {
+                                Log.d(TAG, "DB ERROR");
+                            }
+                        }
+                    });
+
+        } catch (Exception ex){
+            Log.d(TAG, "DB EXCEPTION");
+        }
+
+
+        isTrackingWalking = false;
+        handler.removeCallbacks(runnable);
+        timerTextView.setText("00:00:000");
+        startButton.setEnabled(true);
+        stopButton.setEnabled(false);
+        pauseButton.setEnabled(false);
+        isTimerRunning = false;
+        isTimerPaused = false;
+        PrevSeconds = 0;
+        CurrentTimerSecs = 0;
+        _totalDistance = 0;
+        distanceTextView.setText("0[m]");
+        clearPolyline();
+
+        try{
+            unregisterReceiver(locationReceiver);
+        } catch (Exception ex){
+
+        }
+        try{
+            StopLocationService();
+        } catch (Exception ex){
+
+        }
+
+        Intent intent = new Intent(WalkActivity.this, HomeActivity.class);
+        startActivity(intent);
     }
 
     private void resumeTimer() {
@@ -368,64 +431,6 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
                         int milliseconds = (int) (elapsedTimeInMillis % 1000);
 
                         int secs = ((minutes * 60) + seconds);
-                        /*
-                        if(secs > PrevSeconds){
-                            CurrentTimerSecs+=1;
-                            PrevSeconds = secs;
-                        }
-
-                        if(CurrentTimerSecs >= TimerDistanceMeasurementLimit) {
-                            //Toast.makeText(MapActivity.this, String.valueOf(CurrentTimerSecs), Toast.LENGTH_SHORT).show();
-
-                            getDeviceLocation();
-
-                            LatLng currentLatLng = new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude());
-
-                            if (previousLocation != null) {
-                                polylinePoints.add(currentLatLng);
-                                drawPolyline();
-                            }
-
-                            if(_isNavigating == true){
-                                // CHECK IF USER HAS ARRIVED AT MARKER
-                                int index = _mapPoints.HasArrivedAtMarker(currentLatLng, DISTANCE_FROM_MARKER_CAP);
-                                //Toast.makeText(MapActivity.this, String.valueOf(index), Toast.LENGTH_SHORT).show();
-                                if(index != -1) {
-                                    // USER HAS ARRIVED!
-                                    Marker hitMarker = _mapPoints.GetMarkerFromIndex(index);
-                                    String arrivedPlaceName = hitMarker.getTitle();
-                                    LatLng markerLatLng = hitMarker.getPosition();
-
-                                    //Toast.makeText(MapActivity.this, arrivedPlaceName, Toast.LENGTH_SHORT).show();
-                                    int points = _mapPoints.CalculatePoints(index);
-                                    if(arrivedPlaceName.contains("STARTING")){
-                                        // TODO: HANDLE ENERING STARTING POSITION
-                                        points += 100;
-                                        Toast.makeText(WalkActivity.this, "YOU BEGAN WALKING: " + arrivedPlaceName + ", points: "+points, Toast.LENGTH_SHORT).show();
-                                        _mapPoints.RemoveMarkerAt(index);
-                                    } else {
-                                        Toast.makeText(WalkActivity.this, "YOU HAVE ARRIVED: " + arrivedPlaceName + ", points: "+points, Toast.LENGTH_SHORT).show();
-                                        _mapPoints.RemoveMarkerAt(index);
-                                    }
-
-                                    USER_POINTS += points;
-                                }
-
-
-                                int markercCount = _mapPoints.GerMarker().size() - 1;
-                                if(markercCount == 0){
-                                    // ALL OF THE POINTS HAVE BEEN HIT
-                                    // TODO: IMPLEMENT LOGIC FOR THAT
-                                    Toast.makeText(WalkActivity.this, "YOU HAVE FINISHED YOUR WALK!", Toast.LENGTH_SHORT).show();
-                                    FinishAssistantWalk();
-                                }
-                            }
-
-                            UpdateTotalDistanceUI();
-
-                            CurrentTimerSecs = 0;
-                        }
-                        */
 
                         String timeString = String.format("%02d:%02d:%03d", minutes, seconds, milliseconds);
                         timerTextView.setText(timeString);
@@ -547,6 +552,31 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
                 }
             }
         });
+    }
+
+    private void showQuitDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Quit dialog");
+        builder.setMessage("Do you want to end your walk?");
+
+        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                endWalk();
+                dialog.dismiss();
+            }
+        });
+
+        builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+
+        // Create and show the dialog
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
     private void showStopTimerDialog() {
@@ -764,22 +794,6 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
                 return null;
             }
 
-            /*
-            @Override
-            public View getInfoContents(Marker marker) {
-                // Inflate the layouts for the info window, title and snippet.
-                View infoWindow = getLayoutInflater().inflate(R.layout.custom_info_contents,
-                        (FrameLayout) findViewById(R.id.map), false);
-
-                TextView title = infoWindow.findViewById(R.id.title);
-                title.setText(marker.getTitle());
-
-                TextView snippet = infoWindow.findViewById(R.id.snippet);
-                snippet.setText(marker.getSnippet());
-
-                return infoWindow;
-            }
-            */
         });
 
         _googleMap.setOnCameraIdleListener(new GoogleMap.OnCameraIdleListener() {
@@ -969,7 +983,11 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
             LatLng firstMP = _mapPoints.GetStartingMapPoint().GetLatLng();
             LatLng secondMP = _mapPoints.GetDestinationMarker().getPosition();
 
-            getWalkingDirections(_geoApiContext, firstMP, secondMP, Color.RED);
+            if(firstMP == null || secondMP == null){
+                Log.d(TAG, "onDatFetchedResultChanged() -> nulls");
+            } else{
+                getWalkingDirections(_geoApiContext, firstMP, secondMP, Color.RED);
+            }
         }
     }
 
@@ -980,8 +998,10 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
 
         // Get location and update it
         LatLng currentLatLng = new LatLng(latitude, longitude);
-        lastKnownLocation.setLatitude(currentLatLng.latitude);
-        lastKnownLocation.setLongitude(currentLatLng.longitude);
+        if(lastKnownLocation != null){
+            lastKnownLocation.setLatitude(currentLatLng.latitude);
+            lastKnownLocation.setLongitude(currentLatLng.longitude);
+        }
 
         // Draw polylines if user is tracking walking!
         if(isTrackingWalking == true){
