@@ -27,11 +27,8 @@ public class WalkListAdapter extends ArrayAdapter<WalkModel> {
             view = LayoutInflater.from(getContext()).inflate(R.layout.walk_list_item, parent, false);
         }
         TextView listDate = view.findViewById(R.id.listDate);
-        TextView listPoints = view.findViewById(R.id.listPoints);
 
-        //listimage.setImageResource(walk.); TODO
         listDate.setText(walk.Date);
-        listPoints.setText(String.valueOf(walk.Points));
 
         return view;
     }

@@ -21,6 +21,11 @@
         android:theme="@style/Theme.JustWalk"
         tools:targetApi="31">
         <activity
+            android:name=".UserSettingsActivity"
+            android:exported="true">
+
+        </activity>
+        <activity
             android:name=".DetailedWalkActivity"
             android:exported="false" />
         <activity

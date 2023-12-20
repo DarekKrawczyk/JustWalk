@@ -42,6 +42,7 @@ public class LoadingAppActivity extends AppCompatActivity {
                 finally {
                     // If user is logged in
                     FirebaseUser user = _auth.getCurrentUser();
+                    //FirebaseUser user = null;
 
                     // Not logged in
                     if(user == null){

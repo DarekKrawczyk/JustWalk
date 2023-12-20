@@ -47,7 +47,7 @@ public class SignUpActivity extends AppCompatActivity {
     }
 
     public void successfullSingUp(){
-        Intent intent = new Intent(SignUpActivity.this, WelcomeActivity.class);
+        Intent intent = new Intent(SignUpActivity.this, UserSettingsActivity.class);
         startActivity(intent);
         finish();
     }
@@ -109,7 +109,7 @@ public class SignUpActivity extends AppCompatActivity {
                 if(task.isSuccessful()){
 
                     try {
-                        User user = new User(username, password, email, phoneNumber);
+                        User user = new User(username, password, email, phoneNumber, 0.0d, 0, 0);
 
                         FirebaseDatabase.getInstance().getReference("Users").child(FirebaseAuth.getInstance().getCurrentUser().getUid())
                                 .setValue(user).addOnCompleteListener(new OnCompleteListener<Void>() {

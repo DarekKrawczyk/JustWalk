@@ -7,9 +7,12 @@ public class Place {
     public double Latitude;
     public double Longitude;
     public String Description;
-    public Map<String, String> Timestamp;
+    public long Timestamp;
 
-    public Place(String name, Double latitude, Double longitude, String description, Map<String, String> timestamp){
+    public Place(){
+
+    }
+    public Place(String name, Double latitude, Double longitude, String description, long timestamp){
         Name = name;
         Latitude = latitude;
         Longitude = longitude;

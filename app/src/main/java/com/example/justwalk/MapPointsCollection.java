@@ -184,9 +184,12 @@ public class MapPointsCollection {
         for(int i = 1; i<_mapPoints.size()-1; i++){
             MapPoint currMP = _mapPoints.get(i);
             String description = "";
+            /*
             Map map = new HashMap();
             map.put("timestamp", ServerValue.TIMESTAMP);
-            Place place = new Place(currMP.GetName(), currMP.GetLatLng().latitude, currMP.GetLatLng().longitude, description, map);
+             */
+            long time = System.currentTimeMillis();
+            Place place = new Place(currMP.GetName(), currMP.GetLatLng().latitude, currMP.GetLatLng().longitude, description, time);
 
             places.add(place);
         }

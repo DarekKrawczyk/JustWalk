@@ -99,6 +99,8 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
     private List<LatLng> polylinePoints;
     private Polyline polyline;
     //END POLTLINE
+    private long _walkStartTime = 0;
+    private long _endWalkingTime = 0;
     private double DISTANCE_FROM_MARKER_CAP = 0.0001;
     private final int TimerDistanceMeasurementLimit = 5;
     private int CurrentTimerSecs = 0;
@@ -288,21 +290,28 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
     public void endWalk(){
         // TODO: Save data in database and quit activity to main screen
 
+        /*
         Map map = new HashMap();
         map.put("timestamp", ServerValue.TIMESTAMP);
-
+         */
+        long time = System.currentTimeMillis();
         double strideLength = 0.7;
         double weight = 80;
         double METvalue = 4.5; // Moderate walk
-        double minutes = Utility.ConvertToTotalMinutes(timerTextView.getText().toString());
+        double minutes = Utility.ConvertToTotalSeconds(timerTextView.getText().toString());
 
         double distanceKM = _totalDistance/1000;
         int steps = Utility.CalculateSteps(_totalDistance, strideLength);
         double calories = Utility.CalculateCaloriesBurned(weight, distanceKM, METvalue);
 
+        long startingWalkTime = _walkStartTime;
+        long endingWalkTime = _endWalkingTime;
+
+        long durationTimeInSecs = 0;
+
         List<Place> places = _mapPoints.exportVisitedPlaces();
 
-        Walk walkToSave = new Walk(map, _totalDistance, steps, USER_POINTS, calories, places);
+        Walk walkToSave = new Walk(time, startingWalkTime, time, durationTimeInSecs, _totalDistance, steps, USER_POINTS, calories, places);
 
         try{
             FirebaseDatabase database = FirebaseDatabase.getInstance();
@@ -416,6 +425,9 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
                 startTimeInMillis = System.currentTimeMillis() - pausedTimeInMillis;
             } else {
                 startTimeInMillis = System.currentTimeMillis();
+                if(_walkStartTime == 0){
+                    _walkStartTime = System.currentTimeMillis();
+                }
             }
 
             // TIMER - this is responsible for counting time of current walk.
@@ -605,6 +617,7 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
     }
 
     private void stopTimer() {
+        _endWalkingTime = System.currentTimeMillis();
         isTrackingWalking = false;
         unregisterReceiver(locationReceiver);
         handler.removeCallbacks(runnable);

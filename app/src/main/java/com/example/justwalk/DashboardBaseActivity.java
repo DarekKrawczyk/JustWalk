@@ -64,8 +64,18 @@ public class DashboardBaseActivity extends AppCompatActivity implements Navigati
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    if(isServicesOK()){
+                    if (isServicesOK()) {
                         startActivity(new Intent(DashboardBaseActivity.this, WalkActivity.class));
+                        overridePendingTransition(0, 0);
+                    }
+                }
+            }, DELAY_MS);
+        }   else if (itemID == R.id.nav_settings) {
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if(isServicesOK()){
+                        startActivity(new Intent(DashboardBaseActivity.this, UserSettingsActivity.class));
                         overridePendingTransition(0, 0);
                     }
                 }
