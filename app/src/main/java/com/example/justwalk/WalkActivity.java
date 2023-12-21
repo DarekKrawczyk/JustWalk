@@ -47,9 +47,13 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ServerValue;
+import com.google.firebase.database.ValueEventListener;
 import com.google.maps.DirectionsApi;
 import com.google.maps.DirectionsApiRequest;
 import com.google.maps.GeoApiContext;
@@ -60,10 +64,13 @@ import com.google.maps.model.DirectionsRoute;
 import com.google.maps.model.TravelMode;
 
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
@@ -84,6 +91,7 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
     private TextView distanceTextView;
     private boolean _isNavigating = false;
     private int USER_POINTS = 0;
+    private DatabaseReference dailyStatsRef;
 
     private boolean isTrackingWalking = false;
     //HEADER
@@ -183,6 +191,12 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
 
         // Set initial state
         UpdateAssistanUI();
+
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null) {
+            String uid = currentUser.getUid();
+            dailyStatsRef = FirebaseDatabase.getInstance().getReference().child("DailyStatistics").child(uid);
+        }
 
         // Add a listener to the switch to handle changes
         AssistantSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -287,6 +301,49 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         registerReceiver(locationReceiver, new IntentFilter(LocationService.ACTION_LOCATION_UPDATE));
     }
 
+    public void updateDailyStatistics(final double newDistance, final int newPoints, final int newSteps, final double newCaloriesBurned) {
+        if (dailyStatsRef == null) {
+            return;
+        }
+
+        String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+
+        dailyStatsRef.child(todayDate).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    // Entry for today exists, modify the values
+                    DailyStatistics dailyStats = dataSnapshot.getValue(DailyStatistics.class);
+                    if (dailyStats != null) {
+                        dailyStats.Distance += newDistance;
+                        dailyStats.Points += newPoints;
+                        dailyStats.Steps += newSteps;
+                        dailyStats.CaloriesBurned += newCaloriesBurned;
+
+                        // Update the modified entry
+                        dailyStatsRef.child(todayDate).setValue(dailyStats);
+                    }
+                } else {
+                    // Entry for today does not exist, add a new entry
+                    DailyStatistics newDailyStats = new DailyStatistics();
+                    newDailyStats.Date = todayDate;
+                    newDailyStats.Distance = newDistance;
+                    newDailyStats.Points = newPoints;
+                    newDailyStats.Steps = newSteps;
+                    newDailyStats.CaloriesBurned = newCaloriesBurned;
+
+                    // Add the new entry
+                    dailyStatsRef.child(todayDate).setValue(newDailyStats);
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                // Handle error
+            }
+        });
+    }
+
     public void endWalk(){
         // TODO: Save data in database and quit activity to main screen
 
@@ -333,6 +390,8 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
             Log.d(TAG, "DB EXCEPTION");
         }
 
+        // TODO: Modify data in DailyStatistics table
+        updateDailyStatistics(_totalDistance, USER_POINTS, steps, calories);
 
         isTrackingWalking = false;
         handler.removeCallbacks(runnable);

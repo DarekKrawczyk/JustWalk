@@ -59,4 +59,7 @@ dependencies {
 
     // PLACES
     implementation("com.google.android.libraries.places:places:3.2.0")
+
+    // GRAPH
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 }
