@@ -33,10 +33,22 @@ public class DailyStatisticsManager {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 List<DailyStatistics> dailyStatisticsList = new ArrayList<>();
+
+                // Iterate through dates
                 for (DataSnapshot dateSnapshot : dataSnapshot.getChildren()) {
-                    DailyStatistics dailyStats = dateSnapshot.getValue(DailyStatistics.class);
-                    if (dailyStats != null) {
-                        dailyStatisticsList.add(dailyStats);
+                    String date = dateSnapshot.getKey();
+
+                    // Iterate through hours for each date
+                    for (DataSnapshot hourSnapshot : dateSnapshot.getChildren()) {
+                        String hour = hourSnapshot.getKey();
+                        DailyStatistics dailyStats = hourSnapshot.getValue(DailyStatistics.class);
+
+                        if (dailyStats != null) {
+                            // Set the date and hour for each entry
+                            dailyStats.Date = date;
+                            dailyStats.Hour = hour;
+                            dailyStatisticsList.add(dailyStats);
+                        }
                     }
                 }
 
@@ -50,6 +62,7 @@ public class DailyStatisticsManager {
                 // Handle error
             }
         });
+
     }
 
     public interface OnDailyStatisticsListListener {

@@ -118,6 +118,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/button_sign_up"
+                app:backgroundTint="@null"
                 android:paddingStart="20dp"
                 android:paddingTop="10dp"
                 android:paddingEnd="20dp"
@@ -126,7 +127,6 @@
                 android:textAlignment="center"
                 android:textSize="34sp"
                 android:onClick="onLoginButtonClick"
-                app:backgroundTint="@null"
                 app:cornerRadius="10dp" />
 
         </FrameLayout>

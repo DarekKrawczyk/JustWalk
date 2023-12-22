@@ -307,12 +307,13 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         }
 
         String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+        String currentHour = Utility.GetCurrentHour();
 
-        dailyStatsRef.child(todayDate).addListenerForSingleValueEvent(new ValueEventListener() {
+        dailyStatsRef.child(todayDate).child(currentHour).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
-                    // Entry for today exists, modify the values
+                    // Entry for today and the current hour exists, modify the values
                     DailyStatistics dailyStats = dataSnapshot.getValue(DailyStatistics.class);
                     if (dailyStats != null) {
                         dailyStats.Distance += newDistance;
@@ -321,19 +322,20 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
                         dailyStats.CaloriesBurned += newCaloriesBurned;
 
                         // Update the modified entry
-                        dailyStatsRef.child(todayDate).setValue(dailyStats);
+                        dailyStatsRef.child(todayDate).child(String.valueOf(currentHour)).setValue(dailyStats);
                     }
                 } else {
-                    // Entry for today does not exist, add a new entry
+                    // Entry for today or the current hour does not exist, add a new entry
                     DailyStatistics newDailyStats = new DailyStatistics();
                     newDailyStats.Date = todayDate;
+                    newDailyStats.Hour = currentHour;
                     newDailyStats.Distance = newDistance;
                     newDailyStats.Points = newPoints;
                     newDailyStats.Steps = newSteps;
                     newDailyStats.CaloriesBurned = newCaloriesBurned;
 
                     // Add the new entry
-                    dailyStatsRef.child(todayDate).setValue(newDailyStats);
+                    dailyStatsRef.child(todayDate).child(String.valueOf(currentHour)).setValue(newDailyStats);
                 }
             }
 
