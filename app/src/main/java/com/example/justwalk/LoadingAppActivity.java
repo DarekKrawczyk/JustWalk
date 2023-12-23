@@ -50,7 +50,7 @@ public class LoadingAppActivity extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                     } else {
-                        Intent intent = new Intent(LoadingAppActivity.this, DashboardActivity.class);
+                        Intent intent = new Intent(LoadingAppActivity.this, HomeActivity.class);
                         startActivity(intent);
                         finish();
                     }

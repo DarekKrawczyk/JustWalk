@@ -2,9 +2,18 @@ package com.example.justwalk;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.CombinedChart;
 import com.example.justwalk.databinding.ActivityDashboardBinding;
@@ -30,7 +39,7 @@ import java.util.List;
 
 import okhttp3.internal.Util;
 
-public class HomeActivity extends DashboardBaseActivity {
+public class HomeActivity extends DashboardBaseActivity implements  StepChangeListener{
 
     ActivityHomeBinding _activityBinding;
     DailyStatisticsManager dailyStatisticsManager;
@@ -39,12 +48,104 @@ public class HomeActivity extends DashboardBaseActivity {
     List<String> _previous7DaysNames;
     TextView _activity_home_calories_text;
     TextView _activity_home_steps_text;
+
+    private double MagnitugePrvious = 0;
+    private Integer stepCounterAcc = 0;
+    private SensorManager _sensorManager;
+    private Sensor _stepCounterSensor;
+    private int _stepsCounted;
+
+    private StepChangeBroadcastReceiver stepsRevicer;
+
+    protected void onPause(){
+        super.onPause();
+
+        SharedPreferences sharedPref = getPreferences(MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.clear();
+        editor.putInt("StepCount", stepCounterAcc);
+        editor.apply();
+    }
+
+    protected void onStop(){
+        super.onStop();
+
+        SharedPreferences sharedPref = getPreferences(MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.clear();
+        editor.putInt("StepCount", stepCounterAcc);
+        editor.apply();
+    }
+
+    protected void onResume(){
+        super.onResume();
+
+        SharedPreferences sharedPref = getPreferences(MODE_PRIVATE);
+        stepCounterAcc = sharedPref.getInt("StepCount", 0);
+    }
+
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(stepsRevicer);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         _activityBinding = ActivityHomeBinding.inflate(getLayoutInflater());
         setContentView(_activityBinding.getRoot());
         allocateActivityTitle("Home");
+
+        // STEP COUNTER
+        /*
+        _sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
+        _stepCounterSensor = _sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
+        if(_stepCounterSensor == null){
+            Toast.makeText(this, "STEP COUNTER NOT AVAILABLE", Toast.LENGTH_SHORT).show();
+        } else{
+            Toast.makeText(this, "STEP COUNTER OK", Toast.LENGTH_SHORT).show();
+        }
+        */
+        // STEP COUNTER FORGROUND SERVICE - NOT WORKING XD
+        //startService(new Intent(this, StepCountForegroundService.class));
+
+        // STEP COUNTER BY ACCELOROMETER
+        /*
+        SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        Sensor sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+
+        SensorEventListener stepDetector = new SensorEventListener() {
+            @Override
+            public void onSensorChanged(SensorEvent event) {
+                if(event != null){
+                    float x_acc = event.values[0];
+                    float y_acc = event.values[1];
+                    float z_acc = event.values[2];
+
+                    double magnitude = Math.sqrt(x_acc*x_acc + y_acc*y_acc + z_acc*z_acc);
+                    double MagDelta = magnitude - MagnitugePrvious;
+                    MagnitugePrvious = magnitude;
+
+                    if(MagDelta > 6){
+                        stepCounterAcc++;
+                        Toast.makeText(HomeActivity.this, "STEPS: " + String.valueOf(stepCounterAcc), Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+
+            @Override
+            public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+            }
+        };
+
+        sensorManager.registerListener(stepDetector, sensor, SensorManager.SENSOR_DELAY_NORMAL);
+         */
+        // END SENSOR
+        stepsRevicer = new StepChangeBroadcastReceiver(this);
+        registerReceiver(stepsRevicer, new IntentFilter(StepCountForegroundAccelerometerService.ACTION_STEPS_UPDATE));
+        startService(new Intent(this, StepCountForegroundAccelerometerService.class));
+
 
         _previous7DaysNames = new ArrayList<>();
         _previous7DaysNames = Utility.GetPreviousWeekDays();
@@ -71,95 +172,43 @@ public class HomeActivity extends DashboardBaseActivity {
                     //TODO: implement geting data
                 }
                 _isLoadingFinished = true;
-                _dailyStatistics = DailyStatistics.GetLastWeek(_dailyStatistics);
-                _dailyStatistics = Utility.SortDates(_dailyStatistics);
+                List<DailyStatistics> _weeklyStatistics = DailyStatistics.GetLastWeek(DailyStatistics.AgregateDay(_dailyStatistics));
+                _weeklyStatistics = Utility.SortDates(_weeklyStatistics);
 
                 // Get this day
-                DailyStatistics todayStats = _dailyStatistics.get(_dailyStatistics.size()-1);
+                DailyStatistics todayStats = _weeklyStatistics.get(_weeklyStatistics.size()-1);
                 _activity_home_steps_text.setText(String.valueOf(todayStats.Steps));
 
                 String calors = String.valueOf((int) Math.round(todayStats.CaloriesBurned));
 
                 _activity_home_calories_text.setText(calors);
 
-                // Sample data
-                ArrayList<BarEntry> barEntries = new ArrayList<>();
-                for (int i = 0; i < _dailyStatistics.size(); i++) {
-                    barEntries.add(new BarEntry(i, _dailyStatistics.get(i).Steps));
-                }
-
-                // BarDataSet customization
-                BarDataSet barDataSet = new BarDataSet(barEntries, "Steps of last week");
-                barDataSet.setColor(Color.rgb(66, 133, 244)); // Change to your desired color
-                barDataSet.setValueTextColor(Color.rgb(66, 133, 244)); // Value text color
-                barDataSet.setValueTextSize(20f);
-
-                // BarData customization
-                BarData barData = new BarData(barDataSet);
-                barData.setBarWidth(0.7f); // Set bar width
-
-                // Calculate average value for the week's steps
-                float averageSteps = Utility.CalculateAverageSteps(_dailyStatistics);
-
-                // Add a red line representing the average value
-                ArrayList<Entry> lineEntries = new ArrayList<>();
-                for (int i = 0; i < _dailyStatistics.size(); i++) {
-                    lineEntries.add(new Entry(i, averageSteps));
-                }
-                LineDataSet lineDataSet = new LineDataSet(lineEntries, "Average Steps");
-                lineDataSet.setDrawIcons(false);
-                lineDataSet.setColor(Color.RED);
-                lineDataSet.setDrawValues(true); // Do not display values for the line
-                lineDataSet.setValueTextSize(20f);
-                lineDataSet.setValueTextColor(Color.rgb(255, 0, 0)); // Value text color
-                LineData lineData = new LineData(lineDataSet);
-
-                // X-axis customization
-                XAxis xAxis = combinedChart.getXAxis();
-                xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-                xAxis.setGranularity(1f);
-                xAxis.setValueFormatter(new IndexAxisValueFormatter(_previous7DaysNames));
-                xAxis.setDrawAxisLine(false); // Hide the X-axis line
-
-                // Y-axis customization
-                YAxis yAxisLeft = combinedChart.getAxisLeft();
-                yAxisLeft.setAxisMinimum(0f);
-                yAxisLeft.setDrawGridLines(false); // Hide grid lines on the left Y-axis
-                yAxisLeft.setDrawAxisLine(false); // Hide the Y-axis line
-                yAxisLeft.setDrawLabels(false); // Hide Y-axis labels
-
-                // Disable the right Y-axis
-                YAxis yAxisRight = combinedChart.getAxisRight();
-                yAxisRight.setEnabled(false);
-
-                // Additional styling
-                Description description = new Description();
-                description.setText(""); // Remove the Y-axis description on the left side
-                combinedChart.setDescription(description); // Disable description
-                combinedChart.setDrawBorders(false); // Disable chart borders
-                combinedChart.animateY(1000); // Animation duration
-
-                // Set both BarData and LineData to CombinedData
-                CombinedData combinedData = new CombinedData();
-                combinedData.setData(barData);
-                combinedData.setData(lineData);
-
-                combinedChart.setData(combinedData);
-
-                // Invalidate the chart to apply changes
-                combinedChart.invalidate();
+                List<String> weekDays = Utility.GetPreviousWeekDays();
+                ChartDataPlacer.PlaceDailyData(_weeklyStatistics, weekDays, combinedChart, 1, "Steps in each day", "Average weakly steps");
             }
         });
 
 
     }
 
-    // Custom ValueFormatter for X-axis labels
-    private static class XAxisValueFormatter extends ValueFormatter {
-        @Override
-        public String getAxisLabel(float value, AxisBase axis) {
-            // Convert float value to the desired X-axis label
-            return String.valueOf((int) value);
+    @Override
+    public void onStepChange(DailyStatistics stats) {
+        String cals = _activity_home_calories_text.getText().toString();
+        String steps = _activity_home_steps_text.getText().toString();
+        try{
+            double calsDbl = Double.valueOf(cals);
+            Integer stepsInt = Integer.parseInt(steps);
+
+            calsDbl += stats.CaloriesBurned;
+            stepsInt += stats.Steps;
+
+            int calsInt = (int) calsDbl;
+
+            _activity_home_steps_text.setText(String.valueOf(stepsInt));
+            _activity_home_calories_text.setText(String.valueOf(calsInt));
+
+        }catch(Exception ex){
+            Toast.makeText(this, "CALORIES CAST ERROR", Toast.LENGTH_SHORT).show();
         }
     }
 }
