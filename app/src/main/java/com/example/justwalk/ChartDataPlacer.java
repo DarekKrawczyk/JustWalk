@@ -4,6 +4,7 @@ import android.graphics.Color;
 
 import com.github.mikephil.charting.charts.CombinedChart;
 import com.github.mikephil.charting.components.Description;
+import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.BarData;
@@ -20,9 +21,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ChartDataPlacer {
-    public static void PlaceDailyData(List<DailyStatistics> _dailyStatistics, List<String> chartLabels, CombinedChart chart, Integer itemType, String dataCaptionChart, String dataCaptionAvg){
+    public static void PlaceDailyData(List<DailyStatistics> _dailyStatistics, List<String> chartLabels, CombinedChart chart, Integer itemType, String currentItemCaption,String dataCaptionChart, String dataCaptionAvg){
         // Item type: 1) Steps; 2) Points; 3) Distance.
         ArrayList<BarEntry> barEntries = new ArrayList<>();
+        List<Integer> colors = new ArrayList<>();
         for (int i = 0; i < _dailyStatistics.size(); i++) {
             float data;
             if(itemType == 1){
@@ -35,12 +37,15 @@ public class ChartDataPlacer {
                 data = (float)_dailyStatistics.get(i).Distance;
             }
             barEntries.add(new BarEntry(i, data));
+            colors.add(Color.rgb(66, 133, 244));
         }
-
+        colors.set(colors.size()-1, Color.rgb(255, 255, 255));
 
         // BarDataSet customization
         BarDataSet barDataSet = new BarDataSet(barEntries, dataCaptionChart);
-        barDataSet.setColor(Color.rgb(66, 133, 244)); // Change to your desired color
+        //barDataSet.setColor(Color.rgb(66, 133, 244)); // Change to your desired color
+
+        barDataSet.setColors(colors);
         //barDataSet.setValueTextColor(Color.rgb(66, 133, 244)); // Value text color
         //barDataSet.setValueTextSize(15f);
 
@@ -97,9 +102,9 @@ public class ChartDataPlacer {
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setValueFormatter(new IndexAxisValueFormatter(chartLabels));
         xAxis.setDrawAxisLine(false); // Hide the X-axis line
-        xAxis.setAxisMinimum(0.5f);
+        xAxis.setAxisMinimum(-0.6f);
 
-        float limitx = (float)_dailyStatistics.size() - 0.5f;
+        float limitx = (float)_dailyStatistics.size() - 0.60f;
 
         xAxis.setAxisMaximum(limitx);
         xAxis.setGranularity(0); // Set the granularity of x-axis labels
@@ -126,6 +131,18 @@ public class ChartDataPlacer {
         CombinedData combinedData = new CombinedData();
         combinedData.setData(barData);
         combinedData.setData(lineData);
+
+        // Customizing appearance of the chart
+        chart.setDrawBorders(true);
+        chart.setBorderColor(Color.BLACK);
+        chart.setBorderWidth(2f);
+
+        // Customizing the appearance of the legend
+        Legend legend = chart.getLegend();
+        legend.setVerticalAlignment(Legend.LegendVerticalAlignment.TOP);
+        legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER);
+        legend.setOrientation(Legend.LegendOrientation.HORIZONTAL);
+        legend.setDrawInside(false);
 
         chart.setData(combinedData);
 

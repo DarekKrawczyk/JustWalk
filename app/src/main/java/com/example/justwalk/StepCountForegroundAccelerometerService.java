@@ -66,9 +66,9 @@ public class StepCountForegroundAccelerometerService extends Service {
         if (currentUser != null) {
             String uid = currentUser.getUid();
             dailyStatsRef = FirebaseDatabase.getInstance().getReference().child("DailyStatistics").child(uid);
-            showToast("DB connected");
+            //showToast("DB connected");
         }
-        showToast("StepsCountFGService - oncreate");
+        //showToast("StepsCountFGService - oncreate");
 
 
         if (stepSensor != null) {
@@ -99,7 +99,7 @@ public class StepCountForegroundAccelerometerService extends Service {
                                 double distanceKM = ddistance/1000;
                                 double dcalories = Utility.CalculateCaloriesBurned(80, distanceKM, METvalue);
                                 updateDailyStatistics(ddistance, dpoints, dsteps, dcalories);
-                                Toast.makeText(StepCountForegroundAccelerometerService.this, "ADDED TO DB", Toast.LENGTH_SHORT).show();
+                                //Toast.makeText(StepCountForegroundAccelerometerService.this, "ADDED TO DB", Toast.LENGTH_SHORT).show();
 
                                 // NOTIFY UI
                                 Intent intent = new Intent(ACTION_STEPS_UPDATE);
@@ -124,7 +124,7 @@ public class StepCountForegroundAccelerometerService extends Service {
             sensorManager.registerListener(sensorEventListener, stepSensor, SensorManager.SENSOR_DELAY_NORMAL);
 
             startForeground(NOTIFICATION_ID, createNotification());
-            showToast("StepsCountFGService - registered");
+            //showToast("StepsCountFGService - registered");
         } else {
             showToast("Step Counter Sensor not available on this device.");
         }
@@ -136,7 +136,8 @@ public class StepCountForegroundAccelerometerService extends Service {
         // Unregister the SensorEventListener when the service is destroyed.
         if (sensorManager != null && sensorEventListener != null) {
             sensorManager.unregisterListener(sensorEventListener);
-            showToast("Step Counter Sensor service destroyed");
+            //
+            // showToast("Step Counter Sensor service destroyed");
         }
     }
 

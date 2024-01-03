@@ -9,6 +9,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.ListView;
+import android.widget.ProgressBar;
 
 import com.example.justwalk.databinding.ActivityWalksBinding;
 import com.google.firebase.database.DataSnapshot;
@@ -31,6 +33,8 @@ public class WalksActivity extends DashboardBaseActivity {
     private final String TAG = "WalksActivity";
     FirebaseDatabase database;
     DatabaseReference databaseRef;
+    ProgressBar loadingProgressBar;
+    ListView listView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,23 +43,12 @@ public class WalksActivity extends DashboardBaseActivity {
         _activityBinding = ActivityWalksBinding.inflate(getLayoutInflater());
         setContentView(_activityBinding.getRoot());
         allocateActivityTitle("Walks");
-        /*
-        Log.d(TAG, "HERER2");
-        String[] Date={"18.12.2023", "20.12.2023"};
-        String[] StartingTime={"17:30", "18:20"};
-        String[] EndTime={"19:22", "20:00"};
-        String[] Duration={"2:30", "1:40"};
-        double[] Distance={2100, 3000};
-        int[] Points={994, 1244};
-        int[] Steps={2900, 4100};
-        double[] CaloriesBurned={244, 190};
-        String[] Places={"AEI * Rynek * Kawiarnia", "ZMITAC * Monopolowy * Ławeczka na rynku"};
 
-        for(int i = 0; i < Date.length; i++){
-            walk = new WalkModel(Date[i],StartingTime[i],EndTime[i],Duration[i],Distance[i],Points[i],Steps[i],CaloriesBurned[i],Places[i]);
-            _walkArrayList.add(walk);
-        }
-         */
+        loadingProgressBar = _activityBinding.getRoot().findViewById(R.id.WalksProgressBar);
+        listView = _activityBinding.getRoot().findViewById(R.id.listview);
+
+        listView.setVisibility(View.INVISIBLE);
+        loadingProgressBar.setVisibility(View.VISIBLE);
 
         database = FirebaseDatabase.getInstance();
         databaseRef = database.getReference().child("walks");
@@ -106,7 +99,7 @@ public class WalksActivity extends DashboardBaseActivity {
 
     private void UpdateWalks(){
         _walkArrayList.clear();
-        for(int i = 0; i < _tempDBList.size(); i++){
+        for(int i = _tempDBList.size()-1; i >= 0; i--){
             Walk tempWalk = _tempDBList.get(i);
 
             String date = Utility.ConvertTimestampToString(tempWalk.Timestamp);
@@ -118,10 +111,25 @@ public class WalksActivity extends DashboardBaseActivity {
             int steps = tempWalk.Steps;
             double calories = tempWalk.CaloriesBurned;
             String places = Utility.ParsePlacesToString(tempWalk.Places);
-            WalkModel vm = new WalkModel(date, startTime, endTime, duration, distance, points, steps, calories, places);
+
+            int image = 0;
+            if(points > 2000){
+                image = R.drawable.fast;
+            }
+            else if(points > 1000){
+                image = R.drawable.medium;
+            }
+            else{
+                image = R.drawable.slow;
+            }
+
+            WalkModel vm = new WalkModel(date, startTime, endTime, duration, distance, points, steps, calories, places, image);
             _walkArrayList.add(vm);
         }
         _listAdapter.notifyDataSetChanged();
         _tempDBList.clear();
+
+        listView.setVisibility(View.VISIBLE);
+        loadingProgressBar.setVisibility(View.INVISIBLE);
     }
 }

@@ -1,6 +1,7 @@
 package com.example.justwalk;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 
 import android.content.Context;
 import android.content.Intent;
@@ -12,6 +13,8 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -49,13 +52,18 @@ public class HomeActivity extends DashboardBaseActivity implements  StepChangeLi
     TextView _activity_home_calories_text;
     TextView _activity_home_steps_text;
 
+    CardView stepsCardView;
+    CardView caloriesCardView;
+
     private double MagnitugePrvious = 0;
     private Integer stepCounterAcc = 0;
     private SensorManager _sensorManager;
     private Sensor _stepCounterSensor;
     private int _stepsCounted;
 
+    private ProgressBar loadingChartProgressBar;
     private StepChangeBroadcastReceiver stepsRevicer;
+    CombinedChart combinedChart;
 
     protected void onPause(){
         super.onPause();
@@ -95,6 +103,17 @@ public class HomeActivity extends DashboardBaseActivity implements  StepChangeLi
         _activityBinding = ActivityHomeBinding.inflate(getLayoutInflater());
         setContentView(_activityBinding.getRoot());
         allocateActivityTitle("Home");
+
+        stepsCardView = _activityBinding.getRoot().findViewById(R.id.StepsCardView);
+        caloriesCardView = _activityBinding.getRoot().findViewById(R.id.CaloriesCardView);
+
+
+        combinedChart = _activityBinding.activityHomeBarChart;
+        loadingChartProgressBar = _activityBinding.getRoot().findViewById(R.id.DailyProgressBar);
+
+        loadingChartProgressBar.setVisibility(View.VISIBLE);
+        combinedChart.setVisibility(View.INVISIBLE);
+
 
         // STEP COUNTER
         /*
@@ -150,7 +169,6 @@ public class HomeActivity extends DashboardBaseActivity implements  StepChangeLi
         _previous7DaysNames = new ArrayList<>();
         _previous7DaysNames = Utility.GetPreviousWeekDays();
 
-        CombinedChart combinedChart = _activityBinding.activityHomeBarChart;
         _activity_home_steps_text = _activityBinding.getRoot().findViewById(R.id.activityHomeStepsText);
         _activity_home_calories_text = _activityBinding.getRoot().findViewById(R.id.activityHomeCaloriesText);
 
@@ -175,6 +193,9 @@ public class HomeActivity extends DashboardBaseActivity implements  StepChangeLi
                 List<DailyStatistics> _weeklyStatistics = DailyStatistics.GetLastWeek(DailyStatistics.AgregateDay(_dailyStatistics));
                 _weeklyStatistics = Utility.SortDates(_weeklyStatistics);
 
+                stepsCardView.animate().rotationX(360).setDuration(500).setStartDelay(0);
+                caloriesCardView.animate().rotationX(360).setDuration(500).setStartDelay(0);
+
                 // Get this day
                 DailyStatistics todayStats = _weeklyStatistics.get(_weeklyStatistics.size()-1);
                 _activity_home_steps_text.setText(String.valueOf(todayStats.Steps));
@@ -184,7 +205,11 @@ public class HomeActivity extends DashboardBaseActivity implements  StepChangeLi
                 _activity_home_calories_text.setText(calors);
 
                 List<String> weekDays = Utility.GetPreviousWeekDays();
-                ChartDataPlacer.PlaceDailyData(_weeklyStatistics, weekDays, combinedChart, 1, "Steps in each day", "Average weakly steps");
+                ChartDataPlacer.PlaceDailyData(_weeklyStatistics, weekDays, combinedChart, 1, "Current day", "Steps in each day", "Average weakly steps");
+
+                loadingChartProgressBar.setVisibility(View.INVISIBLE);
+                combinedChart.setVisibility(View.VISIBLE);
+
             }
         });
 

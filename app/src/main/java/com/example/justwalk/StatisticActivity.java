@@ -87,7 +87,6 @@ public class StatisticActivity extends DashboardBaseActivity {
         _dailyStatsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(StatisticActivity.this, "DAILY", Toast.LENGTH_SHORT).show();
                 _isDailyStatsDisplayed = true;
                 _isWeeklyStatsDisplayed = false;
                 _isMonthlyStatsDisplayed = false;
@@ -101,7 +100,6 @@ public class StatisticActivity extends DashboardBaseActivity {
         _weeklyStatsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(StatisticActivity.this, "WEEKLY", Toast.LENGTH_SHORT).show();
                 _isDailyStatsDisplayed = false;
                 _isWeeklyStatsDisplayed = true;
                 _isMonthlyStatsDisplayed = false;
@@ -115,7 +113,6 @@ public class StatisticActivity extends DashboardBaseActivity {
         _monthlyStatsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(StatisticActivity.this, "MONTHLY", Toast.LENGTH_SHORT).show();
                 _isDailyStatsDisplayed = false;
                 _isWeeklyStatsDisplayed = false;
                 _isMonthlyStatsDisplayed = true;
@@ -182,17 +179,17 @@ public class StatisticActivity extends DashboardBaseActivity {
             // DAILY
 
             List<String> hourList = Utility.GenerateHourList();
-            ChartDataPlacer.PlaceDailyData(_dailyStatistics, hourList, _stepsChart, 1, "Steps by hour", "Average daily steps");
+            ChartDataPlacer.PlaceDailyData(_dailyStatistics, hourList, _stepsChart, 1, "Current day","Steps by hour", "Average daily steps");
         }
         else if(_isWeeklyStatsDisplayed){
             // WEEKLY
             List<String> weekDays = Utility.GetPreviousWeekDays();
-            ChartDataPlacer.PlaceDailyData(_weeklyStatistics, weekDays, _stepsChart, 1, "Steps in each day", "Average weakly steps");
+            ChartDataPlacer.PlaceDailyData(_weeklyStatistics, weekDays, _stepsChart, 1, "Current day","Steps in each day", "Average weakly steps");
         }
         else if(_isMonthlyStatsDisplayed){
             // MONTHLY
             List<String> months = Utility.GenerateMonthNames();
-            ChartDataPlacer.PlaceDailyData(_monthlyStatistics, months, _stepsChart, 1, "Steps in each month", "Average yearly steps");
+            ChartDataPlacer.PlaceDailyData(_monthlyStatistics, months, _stepsChart, 1, "Current day","Steps in each month", "Average yearly steps");
         }
 
         _stepsProgressBar.setVisibility(View.INVISIBLE);
@@ -204,17 +201,17 @@ public class StatisticActivity extends DashboardBaseActivity {
             // DAILY
 
             List<String> hourList = Utility.GenerateHourList();
-            ChartDataPlacer.PlaceDailyData(_dailyStatistics, hourList, _pointsChart, 2, "Points by hour", "Average daily points");
+            ChartDataPlacer.PlaceDailyData(_dailyStatistics, hourList, _pointsChart, 2, "Current day","Points by hour", "Average daily points");
         }
         else if(_isWeeklyStatsDisplayed){
             // WEEKLY
             List<String> weekDays = Utility.GetPreviousWeekDays();
-            ChartDataPlacer.PlaceDailyData(_weeklyStatistics, weekDays, _pointsChart, 2, "Points in each day", "Average weakly points");
+            ChartDataPlacer.PlaceDailyData(_weeklyStatistics, weekDays, _pointsChart, 2, "Current day","Points in each day", "Average weakly points");
         }
         else if(_isMonthlyStatsDisplayed){
             // MONTHLY
             List<String> months = Utility.GenerateMonthNames();
-            ChartDataPlacer.PlaceDailyData(_monthlyStatistics, months, _pointsChart, 2, "Points in each month", "Average yearly points");
+            ChartDataPlacer.PlaceDailyData(_monthlyStatistics, months, _pointsChart, 2, "Current day","Points in each month", "Average yearly points");
         }
 
         _pointsProgressBar.setVisibility(View.INVISIBLE);
@@ -226,17 +223,17 @@ public class StatisticActivity extends DashboardBaseActivity {
             // DAILY
 
             List<String> hourList = Utility.GenerateHourList();
-            ChartDataPlacer.PlaceDailyData(_dailyStatistics, hourList, _distanceChart, 3, "Distance by hour", "Average daily distance");
+            ChartDataPlacer.PlaceDailyData(_dailyStatistics, hourList, _distanceChart, 3, "Current day","Distance by hour", "Average daily distance");
         }
         else if(_isWeeklyStatsDisplayed){
             // WEEKLY
             List<String> weekDays = Utility.GetPreviousWeekDays();
-            ChartDataPlacer.PlaceDailyData(_weeklyStatistics, weekDays, _distanceChart, 3, "Distance in each day", "Average weakly distance");
+            ChartDataPlacer.PlaceDailyData(_weeklyStatistics, weekDays, _distanceChart, 3, "Current day","Distance in each day", "Average weakly distance");
         }
         else if(_isMonthlyStatsDisplayed){
             // MONTHLY
             List<String> months = Utility.GenerateMonthNames();
-            ChartDataPlacer.PlaceDailyData(_monthlyStatistics, months, _distanceChart, 3, "Distance in each month", "Average yearly distance");
+            ChartDataPlacer.PlaceDailyData(_monthlyStatistics, months, _distanceChart, 3, "Current day","Distance in each month", "Average yearly distance");
         }
 
         _distanceProgressBar.setVisibility(View.INVISIBLE);

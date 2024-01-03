@@ -7,6 +7,7 @@ import java.text.DateFormatSymbols;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
@@ -22,20 +23,6 @@ public class Utility {
         return (metValue * weightKg * distanceKm) / 200.0;
     }
 
-    public static double ConvertToTotalMinutes(String time) {
-        String[] timeComponents = time.split(":");
-
-        int minutes = Integer.parseInt(timeComponents[0]);
-        int seconds = Integer.parseInt(timeComponents[1]);
-        double milliseconds = Double.parseDouble(timeComponents[2]);
-
-        double minutesFromSeconds = seconds / 60.0;
-        double minutesFromMilliseconds = milliseconds / 60000.0;
-
-        double totalMinutes = minutes + minutesFromSeconds + minutesFromMilliseconds;
-
-        return totalMinutes;
-    }
     public static String ConvertTimestampToHoursAndMinutes(long timestamp) {
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
 
@@ -57,16 +44,6 @@ public class Utility {
 
         return totalSeconds;
     }
-    public static String GetTimeDate(long timestamp){
-        try{
-            DateFormat dateFormat = getDateTimeInstance();
-            Date netDate = (new Date(timestamp));
-            return dateFormat.format(netDate);
-        } catch(Exception e) {
-            return "date";
-        }
-    }
-
     public static String ParsePlacesToString(List<Place> places){
         if(places == null){
             return "";
@@ -115,26 +92,36 @@ public class Utility {
         return sdf.format(date);
     }
 
+    public static String ExtractDate(String inputDateTime) {
+        SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+        try {
+            Date date = inputFormat.parse(inputDateTime);
+            return outputFormat.format(date);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public static List<String> GetPreviousWeekDays() {
+
         List<String> previousDays = new ArrayList<>();
-        SimpleDateFormat dayFormat = new SimpleDateFormat("EEEE", Locale.getDefault());
+        SimpleDateFormat dayFormat = new SimpleDateFormat("EEEE", Locale.forLanguageTag("EN"));
         Calendar calendar = Calendar.getInstance();
 
         for (int i = 0; i < 7; i++) {
-            // Get the current date
             Date currentDate = calendar.getTime();
 
-            // Get the name of the current day
             String currentDay = dayFormat.format(currentDate);
 
-            // Add the current day to the list
-            previousDays.add(currentDay);
+            String changedCurDay = Character.toUpperCase(currentDay.charAt(0)) + currentDay.substring(1).toLowerCase();
+            previousDays.add(changedCurDay);
 
-            // Move to the previous day
             calendar.add(Calendar.DAY_OF_YEAR, -1);
         }
 
-        // Reverse the list to have the days in chronological order
         Collections.reverse(previousDays);
 
         return previousDays;
@@ -197,26 +184,19 @@ public class Utility {
         List<DailyStatistics> result = new ArrayList<>();
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
-        // Map to store aggregated statistics for each month
-        // The key is the month-year format, e.g., "2023-01"
-        // The value is the aggregated statistics for that month
         java.util.Map<String, DailyStatistics> monthlyAggregationMap = new java.util.HashMap<>();
 
-        // Iterate through the data and aggregate by month
         for (DailyStatistics entry : data) {
             try {
                 Date entryDate = dateFormat.parse(entry.Date);
                 Calendar calendar = Calendar.getInstance();
                 calendar.setTime(entryDate);
 
-                // Get the month and year
                 int year = calendar.get(Calendar.YEAR);
-                int month = calendar.get(Calendar.MONTH) + 1; // Months are zero-based
+                int month = calendar.get(Calendar.MONTH) + 1;
 
-                // Create a key for the month-year format
                 String monthYearKey = String.format("%04d-%02d", year, month);
 
-                // Get or create the aggregated statistics for the month
                 DailyStatistics aggregatedStats = monthlyAggregationMap.get(monthYearKey);
                 if (aggregatedStats == null) {
                     aggregatedStats = new DailyStatistics();
@@ -225,7 +205,6 @@ public class Utility {
                     monthlyAggregationMap.put(monthYearKey, aggregatedStats);
                 }
 
-                // Aggregate the values for the month
                 aggregatedStats.Distance += entry.Distance;
                 aggregatedStats.Steps += entry.Steps;
                 aggregatedStats.Points += entry.Points;
@@ -236,13 +215,10 @@ public class Utility {
             }
         }
 
-        // Add default entries for months with no existing data
         addDefaultEntries(monthlyAggregationMap);
 
-        // Add aggregated entries to the result
         result.addAll(monthlyAggregationMap.values());
 
-        // Sort the result list by month-year key
         Collections.sort(result, new Comparator<DailyStatistics>() {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM");
 
@@ -263,19 +239,15 @@ public class Utility {
     }
 
     private static void addDefaultEntries(java.util.Map<String, DailyStatistics> monthlyAggregationMap) {
-        // Get the current date
         Calendar calendar = Calendar.getInstance();
         Date currentDate = calendar.getTime();
         SimpleDateFormat monthYearFormat = new SimpleDateFormat("yyyy-MM");
 
-        // Iterate over the last 12 months
         for (int i = 0; i < 12; i++) {
-            // Calculate the month for the current iteration
             calendar.setTime(currentDate);
             calendar.add(Calendar.MONTH, -i);
             String monthYearKey = monthYearFormat.format(calendar.getTime());
 
-            // Add default entry if missing
             if (!monthlyAggregationMap.containsKey(monthYearKey)) {
                 DailyStatistics defaultEntry = new DailyStatistics();
                 defaultEntry.Date = monthYearKey;
@@ -287,17 +259,21 @@ public class Utility {
 
     public static List<String> GenerateMonthNames() {
         List<String> monthNames = new ArrayList<>();
-
-        // Get the short month names using the default locale
         String[] shortMonthNames = new DateFormatSymbols().getShortMonths();
 
-        // Add non-empty month names to the list
         for (String monthName : shortMonthNames) {
             if (!monthName.isEmpty()) {
-                monthNames.add(monthName);
+                String changedCurMnth = Character.toUpperCase(monthName.charAt(0)) + monthName.substring(1).toLowerCase();
+                monthNames.add(changedCurMnth);
             }
         }
 
         return monthNames;
+    }
+
+    public static List<String> SplitString(String input) {
+        String[] parts = input.split("\\s*\\*\\s*");
+        List<String> resultList = Arrays.asList(parts);
+        return resultList;
     }
 }

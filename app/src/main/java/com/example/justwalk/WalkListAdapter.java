@@ -1,6 +1,7 @@
 package com.example.justwalk;
 
 import android.content.Context;
+import android.media.Image;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +11,8 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import com.google.android.material.imageview.ShapeableImageView;
 
 import java.util.ArrayList;
 
@@ -27,8 +30,12 @@ public class WalkListAdapter extends ArrayAdapter<WalkModel> {
             view = LayoutInflater.from(getContext()).inflate(R.layout.walk_list_item, parent, false);
         }
         TextView listDate = view.findViewById(R.id.listDate);
+        TextView listPoints = view.findViewById(R.id.listPoints);
+        ImageView image = view.findViewById(R.id.listImage);
 
         listDate.setText(walk.Date);
+        listPoints.setText(String.valueOf(walk.Points));
+        image.setImageResource(walk.Image);
 
         return view;
     }
