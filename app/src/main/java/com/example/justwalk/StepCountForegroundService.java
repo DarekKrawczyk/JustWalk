@@ -73,9 +73,9 @@ public class StepCountForegroundService extends Service {
                         int dsteps = steps;
                         double METvalue = 4.5; // Moderate walk
                         double ddistance = dsteps * 0.7;
-                        int dpoints = 100;
+                        int dpoints = Utility.CalculatePoints(steps);
                         double distanceKM = ddistance/1000;
-                        double dcalories = Utility.CalculateCaloriesBurned(80, distanceKM, METvalue);
+                        double dcalories = Utility.CalculateCaloriesBurned(steps);
                         updateDailyStatistics(ddistance, dpoints, dsteps, dcalories);
                     }
                 }

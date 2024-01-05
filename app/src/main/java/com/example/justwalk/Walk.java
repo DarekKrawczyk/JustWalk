@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 public class Walk {
+    public String UserID;
     public long Timestamp;
     public long StartingTimeInMilis;
     public long EndingTimeInMilis;
@@ -19,7 +20,8 @@ public class Walk {
     public Walk(){
 
     }
-    public Walk(long timestamp, long startingTimeInMilis,long endingTimeInMilis, long durationTimeInSecs, double distance, int steps, int points, double caloriesBurned, List<Place> places){
+    public Walk(String userID, long timestamp, long startingTimeInMilis,long endingTimeInMilis, long durationTimeInSecs, double distance, int steps, int points, double caloriesBurned, List<Place> places){
+        UserID = userID;
         Timestamp = timestamp;
         StartingTimeInMilis = startingTimeInMilis;
         EndingTimeInMilis = endingTimeInMilis;

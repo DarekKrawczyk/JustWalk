@@ -13,6 +13,8 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 
 import com.example.justwalk.databinding.ActivityWalksBinding;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -53,26 +55,29 @@ public class WalksActivity extends DashboardBaseActivity {
         database = FirebaseDatabase.getInstance();
         databaseRef = database.getReference().child("walks");
 
-        databaseRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                // Handle data changes
-                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                    Walk walk = snapshot.getValue(Walk.class);
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        FirebaseUser user = auth.getCurrentUser();
+        String currentUserID = user.getUid();
+        databaseRef.orderByChild("UserID").equalTo(currentUserID)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                            Walk walk = snapshot.getValue(Walk.class);
 
-                    if (walk != null) {
-                        // Add more fields as needed
-                        _tempDBList.add(walk);
+                            if (walk != null) {
+                                _tempDBList.add(walk);
+                            }
+                        }
+                        UpdateWalks();
                     }
-                }
-                UpdateWalks();
-            }
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
 
-            }
-        });
+                    }
+                });
+
 
 
         _listAdapter = new WalkListAdapter(WalksActivity.this, _walkArrayList);

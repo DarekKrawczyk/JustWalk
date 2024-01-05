@@ -309,11 +309,15 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
         String currentHour = Utility.GetCurrentHour();
 
-        dailyStatsRef.child(todayDate).child(currentHour).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        FirebaseUser user = auth.getCurrentUser();
+        String currentUserID = user.getUid();
+
+        dailyStatsRef.child(currentUserID).child(todayDate).child(String.valueOf(currentHour))
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
-                    // Entry for today and the current hour exists, modify the values
                     DailyStatistics dailyStats = dataSnapshot.getValue(DailyStatistics.class);
                     if (dailyStats != null) {
                         dailyStats.Distance += newDistance;
@@ -321,12 +325,11 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
                         dailyStats.Steps += newSteps;
                         dailyStats.CaloriesBurned += newCaloriesBurned;
 
-                        // Update the modified entry
                         dailyStatsRef.child(todayDate).child(String.valueOf(currentHour)).setValue(dailyStats);
                     }
                 } else {
-                    // Entry for today or the current hour does not exist, add a new entry
                     DailyStatistics newDailyStats = new DailyStatistics();
+                    newDailyStats.UserID = currentUserID;
                     newDailyStats.Date = todayDate;
                     newDailyStats.Hour = currentHour;
                     newDailyStats.Distance = newDistance;
@@ -361,7 +364,7 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
 
         double distanceKM = _totalDistance/1000;
         int steps = Utility.CalculateSteps(_totalDistance, strideLength);
-        double calories = Utility.CalculateCaloriesBurned(weight, distanceKM, METvalue);
+        double calories = Utility.CalculateCaloriesBurned(steps);
 
         long startingWalkTime = _walkStartTime;
         long endingWalkTime = _endWalkingTime;
@@ -370,7 +373,11 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
 
         List<Place> places = _mapPoints.exportVisitedPlaces();
 
-        Walk walkToSave = new Walk(time, startingWalkTime, time, durationTimeInSecs, _totalDistance, steps, USER_POINTS, calories, places);
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        FirebaseUser user = auth.getCurrentUser();
+        String uid = user.getUid();
+
+        Walk walkToSave = new Walk(uid, time, startingWalkTime, time, durationTimeInSecs, _totalDistance, steps, USER_POINTS, calories, places);
 
         try{
             FirebaseDatabase database = FirebaseDatabase.getInstance();
@@ -406,7 +413,7 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         PrevSeconds = 0;
         CurrentTimerSecs = 0;
         _totalDistance = 0;
-        distanceTextView.setText("0[m]");
+        distanceTextView.setText("0");
         clearPolyline();
 
         try{
@@ -432,6 +439,17 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         // Enable or disable buttons based on the switch state
         boolean switchState = AssistantSwitch.isChecked();
         NavigateButton.setEnabled(switchState);
+
+        /*
+        int color = 0;
+        if(switchState == true){
+            color = R.color.PALETE_CHARCOAL;
+        }
+        else{
+            color = R.color.PALETE_TEA_ROSE;
+        }
+*/
+        //NavigateButton.setColor(color);
     }
     public void ClearAssistantWalkData(){
         // Clear Data
@@ -470,10 +488,10 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
     private void UpdateTotalDistanceUI(){
         calculateTotalDistance();
         DecimalFormat df = new DecimalFormat("#.##");
-        String distanceText = df.format(_totalDistance) + "[m]";
+        String distanceText = df.format(_totalDistance);
         distanceTextView.setText(distanceText);
 
-        String pointsString = String.format("Points: %01d", USER_POINTS);
+        String pointsString = String.format("%01d", USER_POINTS);
         PointsTV.setText(pointsString);
 
     }
@@ -691,7 +709,7 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         PrevSeconds = 0;
         CurrentTimerSecs = 0;
         _totalDistance = 0;
-        distanceTextView.setText("0[m]");
+        distanceTextView.setText("0");
         clearPolyline();
         StopLocationService();
     }
@@ -1094,7 +1112,7 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
                     LatLng markerLatLng = hitMarker.getPosition();
 
 
-                    int points = _mapPoints.CalculatePoints(currentLatLng, hitMarker.getPosition());
+                    int points = _mapPoints.CalculatePoints(currentLatLng, _mapPoints.GetStartingMapPoint().GetLatLng());
 
                     _mapPoints.DeleteMarkers();
 

@@ -43,6 +43,10 @@ public class StepCountForegroundAccelerometerService extends Service {
     Random random = new Random();
     int stepsDBCAP = 0;
 
+    int _lastPoints = 0;
+    double _lastDistance = 0;
+    double _lastCalories = 0;
+
     private static final int NOTIFICATION_ID = 1;
     private static final String CHANNEL_ID = "StepCountChannel";
 
@@ -95,11 +99,16 @@ public class StepCountForegroundAccelerometerService extends Service {
 
                                 double METvalue = 4.5; // Moderate walk
                                 double ddistance = dsteps * 0.7;
-                                int dpoints = 100;
+                                int dpoints = Utility.CalculatePoints(dsteps);
                                 double distanceKM = ddistance/1000;
-                                double dcalories = Utility.CalculateCaloriesBurned(80, distanceKM, METvalue);
+                                double dcalories = Utility.CalculateCaloriesBurned(dsteps);
+                                //double dcalories = Utility.CalculateCaloriesBurned(80, distanceKM, METvalue);
                                 updateDailyStatistics(ddistance, dpoints, dsteps, dcalories);
                                 //Toast.makeText(StepCountForegroundAccelerometerService.this, "ADDED TO DB", Toast.LENGTH_SHORT).show();
+
+                                _lastCalories = dcalories;
+                                _lastPoints = dpoints;
+                                _lastDistance = ddistance;
 
                                 // NOTIFY UI
                                 Intent intent = new Intent(ACTION_STEPS_UPDATE);
@@ -182,40 +191,43 @@ public class StepCountForegroundAccelerometerService extends Service {
         String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
         String currentHour = Utility.GetCurrentHour();
 
-        dailyStatsRef.child(todayDate).child(currentHour).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    // Entry for today and the current hour exists, modify the values
-                    DailyStatistics dailyStats = dataSnapshot.getValue(DailyStatistics.class);
-                    if (dailyStats != null) {
-                        dailyStats.Distance += newDistance;
-                        dailyStats.Points += newPoints;
-                        dailyStats.Steps += newSteps;
-                        dailyStats.CaloriesBurned += newCaloriesBurned;
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        FirebaseUser user = auth.getCurrentUser();
+        String currentUserID = user.getUid();
 
-                        // Update the modified entry
-                        dailyStatsRef.child(todayDate).child(String.valueOf(currentHour)).setValue(dailyStats);
+        dailyStatsRef.child(currentUserID).child(todayDate).child(String.valueOf(currentHour))
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        if (dataSnapshot.exists()) {
+                            DailyStatistics dailyStats = dataSnapshot.getValue(DailyStatistics.class);
+                            if (dailyStats != null) {
+                                dailyStats.Distance += newDistance;
+                                dailyStats.Points += newPoints;
+                                dailyStats.Steps += newSteps;
+                                dailyStats.CaloriesBurned += newCaloriesBurned;
+
+                                dailyStatsRef.child(todayDate).child(String.valueOf(currentHour)).setValue(dailyStats);
+                            }
+                        } else {
+                            DailyStatistics newDailyStats = new DailyStatistics();
+                            newDailyStats.UserID = currentUserID;
+                            newDailyStats.Date = todayDate;
+                            newDailyStats.Hour = currentHour;
+                            newDailyStats.Distance = newDistance;
+                            newDailyStats.Points = newPoints;
+                            newDailyStats.Steps = newSteps;
+                            newDailyStats.CaloriesBurned = newCaloriesBurned;
+
+                            // Add the new entry
+                            dailyStatsRef.child(todayDate).child(String.valueOf(currentHour)).setValue(newDailyStats);
+                        }
                     }
-                } else {
-                    // Entry for today or the current hour does not exist, add a new entry
-                    DailyStatistics newDailyStats = new DailyStatistics();
-                    newDailyStats.Date = todayDate;
-                    newDailyStats.Hour = currentHour;
-                    newDailyStats.Distance = newDistance;
-                    newDailyStats.Points = newPoints;
-                    newDailyStats.Steps = newSteps;
-                    newDailyStats.CaloriesBurned = newCaloriesBurned;
 
-                    // Add the new entry
-                    dailyStatsRef.child(todayDate).child(String.valueOf(currentHour)).setValue(newDailyStats);
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                // Handle error
-            }
-        });
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        // Handle error
+                    }
+                });
     }
 }

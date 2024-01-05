@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.List;
 
 public class DailyStatistics {
+    public String UserID;
     public String Date;
     public String Hour;
     public double Distance;
@@ -18,7 +19,8 @@ public class DailyStatistics {
     public DailyStatistics(){
 
     }
-    public DailyStatistics(String date, String hour, double distance, int points, int steps, double calories){
+    public DailyStatistics(String userID, String date, String hour, double distance, int points, int steps, double calories){
+        UserID = userID;
         Date = date;
         Hour = hour;
         Distance = distance;
@@ -68,7 +70,7 @@ public class DailyStatistics {
 
             // If no data for the current date, add a placeholder entry
             if (!hasData) {
-                DailyStatistics placeholderEntry = new DailyStatistics(currentDateMinusDaysStr, Utility.GetCurrentHour(),0.0, 0, 0, 0.0);
+                DailyStatistics placeholderEntry = new DailyStatistics("me",currentDateMinusDaysStr, Utility.GetCurrentHour(),0.0, 0, 0, 0.0);
                 result.add(placeholderEntry);
             }
         }
@@ -117,7 +119,7 @@ public class DailyStatistics {
 
             // If no data for the current date and hour, add a placeholder entry
             if (!hasData) {
-                DailyStatistics placeholderEntry = new DailyStatistics(currentDateStr, currentHourStr, 0.0, 0, 0, 0.0);
+                DailyStatistics placeholderEntry = new DailyStatistics("me", currentDateStr, currentHourStr, 0.0, 0, 0, 0.0);
                 result.add(placeholderEntry);
             }
         }

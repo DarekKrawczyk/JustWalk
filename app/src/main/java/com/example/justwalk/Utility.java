@@ -14,6 +14,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Random;
 
 public class Utility {
     public static int CalculateSteps(double distance, double strideLength){
@@ -21,6 +22,10 @@ public class Utility {
     }
     public static double CalculateCaloriesBurned(double weightKg, double distanceKm, double metValue) {
         return (metValue * weightKg * distanceKm) / 200.0;
+    }
+    public static double CalculateCaloriesBurned(int steps) {
+        // # of steps*.04 = calories
+        return steps*0.04;
     }
 
     public static String ConvertTimestampToHoursAndMinutes(long timestamp) {
@@ -90,6 +95,12 @@ public class Utility {
         Date date = new Date(timestamp);
 
         return sdf.format(date);
+    }
+
+    public static int CalculatePoints(int steps){
+        Random random = new Random();
+        int randomNumber = random.nextInt(4) + 1;
+        return randomNumber;
     }
 
     public static String ExtractDate(String inputDateTime) {

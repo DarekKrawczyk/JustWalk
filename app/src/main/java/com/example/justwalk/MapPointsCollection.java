@@ -146,6 +146,13 @@ public class MapPointsCollection {
         }
         return null;
     }
+
+    public Marker GetStartMarker(){
+        if(_markers != null && _markers.size() > 0){
+            return _markers.get(0);
+        }
+        return null;
+    }
     public boolean HasArrived(LatLng userPosition, double distanceCap){
         // If user has arrived at marker return index of that marker, otherwise return -1
         MapPoint mp = GetNextMapPoint();
