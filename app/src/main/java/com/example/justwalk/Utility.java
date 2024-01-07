@@ -6,6 +6,8 @@ import java.text.DateFormat;
 import java.text.DateFormatSymbols;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -116,6 +118,24 @@ public class Utility {
         }
     }
 
+    public static List<String> GetPrevoiusMonths() {
+        List<String> last12Months = new ArrayList<>();
+        SimpleDateFormat monthFormat = new SimpleDateFormat("MMMM", Locale.forLanguageTag("EN"));
+        Calendar calendar = Calendar.getInstance();
+
+        for (int i = 0; i < 12; i++) {
+            Date currentDate = calendar.getTime();
+
+            String currentMonth = monthFormat.format(currentDate);
+            last12Months.add(currentMonth);
+
+            calendar.add(Calendar.MONTH, -1);
+        }
+
+        Collections.reverse(last12Months);
+
+        return last12Months;
+    }
     public static List<String> GetPreviousWeekDays() {
 
         List<String> previousDays = new ArrayList<>();
@@ -166,6 +186,32 @@ public class Utility {
         int totalSteps = 0;
         for (DailyStatistics entry : dailyStatisticsList) {
             totalSteps += entry.Steps;
+        }
+
+        return (float) totalSteps / dailyStatisticsList.size();
+    }
+
+    public static float CalculateAveragePoints(List<DailyStatistics> dailyStatisticsList) {
+        if (dailyStatisticsList.isEmpty()) {
+            return 0f;
+        }
+
+        int totalSteps = 0;
+        for (DailyStatistics entry : dailyStatisticsList) {
+            totalSteps += entry.Points;
+        }
+
+        return (float) totalSteps / dailyStatisticsList.size();
+    }
+
+    public static float CalculateAverageDistance(List<DailyStatistics> dailyStatisticsList) {
+        if (dailyStatisticsList.isEmpty()) {
+            return 0f;
+        }
+
+        int totalSteps = 0;
+        for (DailyStatistics entry : dailyStatisticsList) {
+            totalSteps += entry.Distance;
         }
 
         return (float) totalSteps / dailyStatisticsList.size();
@@ -282,6 +328,13 @@ public class Utility {
         return monthNames;
     }
 
+    public static String GetDayName(LocalDate date) {
+        DayOfWeek dayOfWeek = null;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            dayOfWeek = date.getDayOfWeek();
+        }
+        return dayOfWeek.toString();
+    }
     public static List<String> SplitString(String input) {
         String[] parts = input.split("\\s*\\*\\s*");
         List<String> resultList = Arrays.asList(parts);

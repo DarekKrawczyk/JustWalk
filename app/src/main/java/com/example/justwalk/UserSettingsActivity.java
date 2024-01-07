@@ -82,7 +82,7 @@ public class UserSettingsActivity extends AppCompatActivity {
                         _editTextAge.setText(ageString);
                         _editTextHeight.setText(heightString);
 
-                        _welcomeTextView.setText("Welcome " + name);
+                        //_welcomeTextView.setText("Welcome " + name);
 
                         //Toast.makeText(UserSettingsActivity.this, "DATA ARRIVED", Toast.LENGTH_SHORT).show();
                         // Do something with the user details

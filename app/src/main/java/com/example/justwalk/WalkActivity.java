@@ -258,7 +258,7 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         CancelButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showQuitDialog();
+                showQuitDialog(true);
             }
         });
 
@@ -281,7 +281,9 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         stopButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showStopTimerDialog();
+
+                //showStopTimerDialog();
+                showQuitDialog(false);
             }
         });
 
@@ -313,9 +315,8 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         FirebaseUser user = auth.getCurrentUser();
         String currentUserID = user.getUid();
 
-        dailyStatsRef.child(currentUserID).child(todayDate).child(String.valueOf(currentHour))
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
+        dailyStatsRef.child(todayDate).child(currentHour).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
                     DailyStatistics dailyStats = dataSnapshot.getValue(DailyStatistics.class);
@@ -349,7 +350,7 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         });
     }
 
-    public void endWalk(){
+    public void endWalk(boolean goHome){
         // TODO: Save data in database and quit activity to main screen
 
         /*
@@ -357,13 +358,20 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         map.put("timestamp", ServerValue.TIMESTAMP);
          */
         long time = System.currentTimeMillis();
-        double strideLength = 0.7;
+
+        User currUser = UserHolder.GetCurrentUser();
         double weight = 80;
+        double stride = 0.7;
+        if(currUser != null){
+            double strideCM = currUser.Height * 0.415;
+            stride = strideCM / 100;
+            weight = currUser.Weight;
+        }
         double METvalue = 4.5; // Moderate walk
         double minutes = Utility.ConvertToTotalSeconds(timerTextView.getText().toString());
 
         double distanceKM = _totalDistance/1000;
-        int steps = Utility.CalculateSteps(_totalDistance, strideLength);
+        int steps = Utility.CalculateSteps(_totalDistance, stride);
         double calories = Utility.CalculateCaloriesBurned(steps);
 
         long startingWalkTime = _walkStartTime;
@@ -399,8 +407,9 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
             Log.d(TAG, "DB EXCEPTION");
         }
 
-        // TODO: Modify data in DailyStatistics table
-        updateDailyStatistics(_totalDistance, USER_POINTS, steps, calories);
+        // Update only points becaouse rest is monitored via accelerometer
+        updateDailyStatistics(0, USER_POINTS, 0, 0);
+        //updateDailyStatistics(_totalDistance, USER_POINTS, steps, calories);
 
         isTrackingWalking = false;
         handler.removeCallbacks(runnable);
@@ -427,8 +436,11 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
 
         }
 
-        Intent intent = new Intent(WalkActivity.this, HomeActivity.class);
-        startActivity(intent);
+        if(goHome == true){
+            Intent intent = new Intent(WalkActivity.this, HomeActivity.class);
+            startActivity(intent);
+            finish();
+        }
     }
 
     private void resumeTimer() {
@@ -645,7 +657,7 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         });
     }
 
-    private void showQuitDialog() {
+    private void showQuitDialog(boolean goHome) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Quit dialog");
         builder.setMessage("Do you want to end your walk?");
@@ -653,7 +665,7 @@ public class WalkActivity extends DashboardBaseActivity implements OnMapReadyCal
         builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                endWalk();
+                endWalk(goHome);
                 dialog.dismiss();
             }
         });

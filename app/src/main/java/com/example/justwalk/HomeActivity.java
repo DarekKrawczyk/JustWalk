@@ -104,6 +104,8 @@ public class HomeActivity extends DashboardBaseActivity implements  StepChangeLi
         setContentView(_activityBinding.getRoot());
         allocateActivityTitle("Home");
 
+        UserHolder.LoadUser();
+
         stepsCardView = _activityBinding.getRoot().findViewById(R.id.StepsCardView);
         caloriesCardView = _activityBinding.getRoot().findViewById(R.id.CaloriesCardView);
 

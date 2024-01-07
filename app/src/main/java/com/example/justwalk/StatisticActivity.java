@@ -1,5 +1,6 @@
 package com.example.justwalk;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
@@ -126,7 +127,8 @@ public class StatisticActivity extends DashboardBaseActivity {
         _locationsStatsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(StatisticActivity.this, "LOCATIONS", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(StatisticActivity.this, LocationsActivity.class);
+                startActivity(intent);
             }
         });
 
@@ -188,7 +190,7 @@ public class StatisticActivity extends DashboardBaseActivity {
         }
         else if(_isMonthlyStatsDisplayed){
             // MONTHLY
-            List<String> months = Utility.GenerateMonthNames();
+            List<String> months = Utility.GetPrevoiusMonths();
             ChartDataPlacer.PlaceDailyData(_monthlyStatistics, months, _stepsChart, 1, "Current day","Steps in each month", "Average yearly steps");
         }
 
@@ -210,7 +212,7 @@ public class StatisticActivity extends DashboardBaseActivity {
         }
         else if(_isMonthlyStatsDisplayed){
             // MONTHLY
-            List<String> months = Utility.GenerateMonthNames();
+            List<String> months = Utility.GetPrevoiusMonths();
             ChartDataPlacer.PlaceDailyData(_monthlyStatistics, months, _pointsChart, 2, "Current day","Points in each month", "Average yearly points");
         }
 
@@ -232,7 +234,7 @@ public class StatisticActivity extends DashboardBaseActivity {
         }
         else if(_isMonthlyStatsDisplayed){
             // MONTHLY
-            List<String> months = Utility.GenerateMonthNames();
+            List<String> months = Utility.GetPrevoiusMonths();
             ChartDataPlacer.PlaceDailyData(_monthlyStatistics, months, _distanceChart, 3, "Current day","Distance in each month", "Average yearly distance");
         }
 

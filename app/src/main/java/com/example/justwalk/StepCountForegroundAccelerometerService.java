@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.BitmapFactory;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -97,8 +98,14 @@ public class StepCountForegroundAccelerometerService extends Service {
 
                                 stepCounterAcc = 0;
 
+                                User currUser = UserHolder.GetCurrentUser();
+                                double stride = 0.7;
+                                if(currUser != null){
+                                    double strideCM = currUser.Height * 0.415;
+                                    stride = strideCM / 100;
+                                }
                                 double METvalue = 4.5; // Moderate walk
-                                double ddistance = dsteps * 0.7;
+                                double ddistance = dsteps * stride;
                                 int dpoints = Utility.CalculatePoints(dsteps);
                                 double distanceKM = ddistance/1000;
                                 double dcalories = Utility.CalculateCaloriesBurned(dsteps);
@@ -176,9 +183,11 @@ public class StepCountForegroundAccelerometerService extends Service {
         );
 
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Step Count Service")
-                .setContentText("Tracking your steps...")
+                .setContentTitle("JustWalk")
+                .setContentText("I'm tracking your steps!")
                 .setSmallIcon(R.mipmap.ic_launcher)
+                .setLargeIcon(BitmapFactory.decodeResource(getResources(),
+                        R.mipmap.ic_launcher))
                 .setContentIntent(pendingIntent)
                 .build();
     }
@@ -195,9 +204,8 @@ public class StepCountForegroundAccelerometerService extends Service {
         FirebaseUser user = auth.getCurrentUser();
         String currentUserID = user.getUid();
 
-        dailyStatsRef.child(currentUserID).child(todayDate).child(String.valueOf(currentHour))
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
+        dailyStatsRef.child(todayDate).child(currentHour).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
                         if (dataSnapshot.exists()) {
                             DailyStatistics dailyStats = dataSnapshot.getValue(DailyStatistics.class);

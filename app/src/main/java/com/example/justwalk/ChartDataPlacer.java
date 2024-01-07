@@ -17,6 +17,7 @@ import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
 import com.github.mikephil.charting.formatter.ValueFormatter;
 
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,18 +40,26 @@ public class ChartDataPlacer {
             barEntries.add(new BarEntry(i, data));
             colors.add(Color.rgb(66, 133, 244));
         }
-        colors.set(colors.size()-1, Color.rgb(255, 255, 255));
+        // For daily
+        if(chartLabels.size() == 24){
+
+            int currentHour = colors.size()-1;
+            LocalTime currentTime = null;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                currentTime = LocalTime.now();
+                currentHour = currentTime.getHour();
+
+                colors.set(currentHour, Color.rgb(255, 255, 255));
+            }
+        }
+        else {
+            colors.set(colors.size()-1, Color.rgb(255, 255, 255));
+        }
 
         // BarDataSet customization
-        BarDataSet barDataSet = new BarDataSet(barEntries, dataCaptionChart);
-        //barDataSet.setColor(Color.rgb(66, 133, 244)); // Change to your desired color
-
+        BarDataSet barDataSet = new BarDataSet(barEntries, "");
         barDataSet.setColors(colors);
-        //barDataSet.setValueTextColor(Color.rgb(66, 133, 244)); // Value text color
-        //barDataSet.setValueTextSize(15f);
 
-
-        // Set a custom ValueFormatter to conditionally display text labels for positive values only
         barDataSet.setValueFormatter(new ValueFormatter() {
             @Override
             public String getFormattedValue(float value) {
@@ -69,30 +78,36 @@ public class ChartDataPlacer {
         barData.setBarWidth(0.7f); // Set bar width
 
         // Calculate average value for the week's steps
-        float averageSteps = Utility.CalculateAverageSteps(_dailyStatistics);
+        float avgVal = 0;
+
+        if(itemType == 1){
+            avgVal = Utility.CalculateAverageSteps(_dailyStatistics);
+        }
+        else if (itemType == 2){
+            avgVal = Utility.CalculateAveragePoints(_dailyStatistics);
+        }
+        else {
+            avgVal = Utility.CalculateAverageDistance(_dailyStatistics);
+        }
 
         // Add a red line representing the average value
         ArrayList<Entry> lineEntries = new ArrayList<>();
         for (int i = 0; i < _dailyStatistics.size(); i++) {
-            lineEntries.add(new Entry(i, averageSteps));
+            lineEntries.add(new Entry(i, avgVal));
         }
 
-        LineDataSet lineDataSet = new LineDataSet(lineEntries, dataCaptionAvg);
+        LineDataSet lineDataSet = new LineDataSet(lineEntries, "");
         lineDataSet.setDrawIcons(false);
         lineDataSet.setColor(Color.RED);
-        //lineDataSet.setDrawValues(true); // Do not display values for the line
-        //lineDataSet.setValueTextSize(20f);
-        //lineDataSet.setValueTextColor(Color.rgb(255, 0, 0)); // Value text color
+
         LineData lineData = new LineData(lineDataSet);
         lineDataSet.setValueFormatter(new ValueFormatter() {
             @Override
             public String getFormattedValue(float value) {
-                // Display text only for positive values
                 if (value > 0) {
-                    //return String.valueOf(value);
                     return "";
                 } else {
-                    return ""; // Empty string for non-positive values
+                    return "";
                 }
             }
         });
@@ -112,9 +127,9 @@ public class ChartDataPlacer {
         // Y-axis customization
         YAxis yAxisLeft = chart.getAxisLeft();
         yAxisLeft.setAxisMinimum(0f);
-        yAxisLeft.setDrawGridLines(true); // Hide grid lines on the left Y-axis
-        yAxisLeft.setDrawAxisLine(true); // Hide the Y-axis line
-        yAxisLeft.setDrawLabels(true); // Hide Y-axis labels
+        yAxisLeft.setDrawGridLines(true);
+        yAxisLeft.setDrawAxisLine(true);
+        yAxisLeft.setDrawLabels(true);
 
         // Disable the right Y-axis
         YAxis yAxisRight = chart.getAxisRight();
@@ -122,10 +137,10 @@ public class ChartDataPlacer {
 
         // Additional styling
         Description description = new Description();
-        description.setText(""); // Remove the Y-axis description on the left side
-        chart.setDescription(description); // Disable description
-        chart.setDrawBorders(false); // Disable chart borders
-        chart.animateY(1000); // Animation duration
+        description.setText("");
+        chart.setDescription(description);
+        chart.setDrawBorders(false);
+        chart.animateY(1000);
 
         // Set both BarData and LineData to CombinedData
         CombinedData combinedData = new CombinedData();
@@ -137,112 +152,12 @@ public class ChartDataPlacer {
         chart.setBorderColor(Color.BLACK);
         chart.setBorderWidth(2f);
 
-        // Customizing the appearance of the legend
+        // Disable legend
         Legend legend = chart.getLegend();
-        legend.setVerticalAlignment(Legend.LegendVerticalAlignment.TOP);
-        legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER);
-        legend.setOrientation(Legend.LegendOrientation.HORIZONTAL);
-        legend.setDrawInside(false);
+        legend.setForm(Legend.LegendForm.NONE);
 
         chart.setData(combinedData);
 
-        // Invalidate the chart to apply changes
-        chart.invalidate();
-    }
-
-    public static void PlaceWeaklyData(List<DailyStatistics> statistics, List<String> chartLabels, CombinedChart chart, Integer itemType, String dataCaption){
-        // Item type: 1) Steps; 2) Points; 3) Distance.
-        ArrayList<BarEntry> barEntries = new ArrayList<>();
-        for (int i = 0; i < statistics.size(); i++) {
-            float data;
-            if(itemType == 1){
-                data = statistics.get(i).Steps;
-            }
-            else if (itemType == 2){
-                data = statistics.get(i).Points;
-            }
-            else {
-                data = (float)statistics.get(i).Distance;
-            }
-            barEntries.add(new BarEntry(i, data));
-        }
-
-
-        // BarDataSet customization
-        String barDataLabe = "Today's " + dataCaption;
-        BarDataSet barDataSet = new BarDataSet(barEntries, barDataLabe);
-        barDataSet.setColor(Color.rgb(66, 133, 244)); // Change to your desired color
-        barDataSet.setValueTextColor(Color.rgb(66, 133, 244)); // Value text color
-        barDataSet.setValueTextSize(15f);
-
-        // Set a custom ValueFormatter to conditionally display text labels for positive values only
-        barDataSet.setValueFormatter(new ValueFormatter() {
-            @Override
-            public String getFormattedValue(float value) {
-                // Display text only for positive values
-                if (value > 0) {
-                    return String.valueOf(value);
-                } else {
-                    return ""; // Empty string for non-positive values
-                }
-            }
-        });
-
-        // BarData customization
-        BarData barData = new BarData(barDataSet);
-        barData.setBarWidth(0.7f); // Set bar width
-
-        // Calculate average value for the week's steps
-        float averageSteps = Utility.CalculateAverageSteps(statistics);
-
-        // Add a red line representing the average value
-        ArrayList<Entry> lineEntries = new ArrayList<>();
-        for (int i = 0; i < statistics.size(); i++) {
-            lineEntries.add(new Entry(i, averageSteps));
-        }
-
-        String lineDataLabel = "Averege " + dataCaption;
-        LineDataSet lineDataSet = new LineDataSet(lineEntries, lineDataLabel);
-        lineDataSet.setDrawIcons(false);
-        lineDataSet.setColor(Color.RED);
-        //lineDataSet.setDrawValues(true); // Do not display values for the line
-        //lineDataSet.setValueTextSize(20f);
-        //lineDataSet.setValueTextColor(Color.rgb(255, 0, 0)); // Value text color
-        LineData lineData = new LineData(lineDataSet);
-
-        // X-axis customization
-        XAxis xAxis = chart.getXAxis();
-        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-        xAxis.setGranularity(1f);
-        xAxis.setValueFormatter(new IndexAxisValueFormatter(chartLabels));
-        xAxis.setDrawAxisLine(false); // Hide the X-axis line
-
-        // Y-axis customization
-        YAxis yAxisLeft = chart.getAxisLeft();
-        yAxisLeft.setAxisMinimum(0f);
-        yAxisLeft.setDrawGridLines(false); // Hide grid lines on the left Y-axis
-        yAxisLeft.setDrawAxisLine(false); // Hide the Y-axis line
-        yAxisLeft.setDrawLabels(false); // Hide Y-axis labels
-
-        // Disable the right Y-axis
-        YAxis yAxisRight = chart.getAxisRight();
-        yAxisRight.setEnabled(false);
-
-        // Additional styling
-        Description description = new Description();
-        description.setText(""); // Remove the Y-axis description on the left side
-        chart.setDescription(description); // Disable description
-        chart.setDrawBorders(false); // Disable chart borders
-        chart.animateY(1000); // Animation duration
-
-        // Set both BarData and LineData to CombinedData
-        CombinedData combinedData = new CombinedData();
-        combinedData.setData(barData);
-        combinedData.setData(lineData);
-
-        chart.setData(combinedData);
-
-        // Invalidate the chart to apply changes
         chart.invalidate();
     }
 }

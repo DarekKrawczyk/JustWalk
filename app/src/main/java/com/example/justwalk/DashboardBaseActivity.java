@@ -58,6 +58,7 @@ public class DashboardBaseActivity extends AppCompatActivity implements Navigati
                 public void run() {
                     startActivity(new Intent(DashboardBaseActivity.this, HomeActivity.class));
                     overridePendingTransition(0, 0);
+                    finish();
                 }
             }, DELAY_MS);
         } else if (itemID == R.id.nav_walk) {
@@ -67,6 +68,7 @@ public class DashboardBaseActivity extends AppCompatActivity implements Navigati
                     if (isServicesOK()) {
                         startActivity(new Intent(DashboardBaseActivity.this, WalkActivity.class));
                         overridePendingTransition(0, 0);
+                        finish();
                     }
                 }
             }, DELAY_MS);
@@ -86,6 +88,7 @@ public class DashboardBaseActivity extends AppCompatActivity implements Navigati
                 public void run() {
                     startActivity(new Intent(DashboardBaseActivity.this, WalksActivity.class));
                     overridePendingTransition(0, 0);
+                    finish();
                 }
             }, DELAY_MS);
         } else if (itemID == R.id.nav_stats) {
@@ -95,6 +98,7 @@ public class DashboardBaseActivity extends AppCompatActivity implements Navigati
                     if(isServicesOK()){
                         startActivity(new Intent(DashboardBaseActivity.this, StatisticActivity.class));
                         overridePendingTransition(0, 0);
+                        finish();
                     }
                 }
             }, DELAY_MS);
@@ -106,6 +110,7 @@ public class DashboardBaseActivity extends AppCompatActivity implements Navigati
                     auth.signOut();
                     startActivity(new Intent(DashboardBaseActivity.this, LoginActivity.class));
                     overridePendingTransition(0, 0);
+                    finish();
                 }
             }, DELAY_MS);
         }

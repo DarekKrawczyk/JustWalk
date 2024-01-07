@@ -34,29 +34,35 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
-        android:id="@+id/button"
-        android:layout_width="170dp"
-        android:layout_height="60dp"
-        android:layout_marginStart="10dp"
-        android:layout_marginBottom="40dp"
-        android:text="Sign Up"
-        android:onClick="onButtonSingUpClicked"
-        android:background="@drawable/button_sign_up"
-        app:backgroundTint="@null"
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        android:layout_margin="20dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
 
-    <Button
-        android:id="@+id/button2"
-        android:layout_width="170dp"
-        android:layout_height="60dp"
-        android:layout_marginEnd="10dp"
-        android:layout_marginBottom="40dp"
-        android:text="Login"
-        android:onClick="onButtonLoginClicked"
-        android:background="@drawable/button_login"
-        app:backgroundTint="@null"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        <Button
+            android:id="@+id/button"
+            android:layout_width="170dp"
+            android:layout_height="60dp"
+            android:layout_weight="1"
+            android:background="@drawable/button_sign_up"
+            android:onClick="onButtonSingUpClicked"
+            android:layout_marginRight="10dp"
+            android:text="Sign Up"
+            app:backgroundTint="@null" />
+
+        <Button
+            android:id="@+id/button2"
+            android:layout_width="170dp"
+            android:layout_height="60dp"
+            android:layout_weight="1"
+            android:layout_marginLeft="10dp"
+            android:background="@drawable/button_login"
+            android:onClick="onButtonLoginClicked"
+            android:text="Login"
+            app:backgroundTint="@null" />
+    </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
